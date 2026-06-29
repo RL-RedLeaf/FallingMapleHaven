@@ -1,0 +1,30 @@
+from django.urls import path
+from apps.admin_dashboard.views import (
+    AdminUserListView,
+    AdminUserUpdateView,
+    AdminPostListView,
+    AdminPostDeleteView,
+    AdminCommentListView,
+    AdminCommentDeleteView,
+    AdminAnonymousQuestionsView,
+    AdminPluginListView,
+    AdminPluginUpdateView,
+    AdminSettingsView,
+    AdminStatsView,
+    AdminLogsView,
+)
+
+urlpatterns = [
+    path("users/", AdminUserListView.as_view(), name="admin-users"),
+    path("users/<int:pk>/", AdminUserUpdateView.as_view(), name="admin-user-update"),
+    path("posts/", AdminPostListView.as_view(), name="admin-posts"),
+    path("posts/<int:pk>/", AdminPostDeleteView.as_view(), name="admin-post-delete"),
+    path("comments/", AdminCommentListView.as_view(), name="admin-comments"),
+    path("comments/<int:pk>/", AdminCommentDeleteView.as_view(), name="admin-comment-delete"),
+    path("anonymous-questions/", AdminAnonymousQuestionsView.as_view(), name="admin-anonymous-questions"),
+    path("plugins/", AdminPluginListView.as_view(), name="admin-plugins"),
+    path("plugins/<int:pk>/", AdminPluginUpdateView.as_view(), name="admin-plugin-update"),
+    path("settings/", AdminSettingsView.as_view(), name="admin-settings"),
+    path("stats/", AdminStatsView.as_view(), name="admin-stats"),
+    path("logs/", AdminLogsView.as_view(), name="admin-logs"),
+]

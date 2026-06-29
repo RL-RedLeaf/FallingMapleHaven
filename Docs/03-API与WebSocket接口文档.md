@@ -34,12 +34,12 @@
 |--------|------|
 | 0 | 成功 |
 | 40001 | 参数错误 |
-| 40002 | 用户不存在 |
-| 40003 | 登录凭证无效 |
-| 40004 | 无权限 |
-| 40005 | 资源不存在 |
-| 40006 | 操作冲突（如重复申请） |
+| 40003 | 登录凭证无效 / 无权限 |
+| 40004 | 资源不存在（用户/帖子/评论等） |
+| 40005 | 操作冲突（如重复申请） |
 | 50000 | 服务器内部错误 |
+
+> 注：实际代码中未使用 40002、40006 错误码，资源不存在统一使用 40004。
 
 ### 1.3 认证方式
 
@@ -130,16 +130,19 @@ GET /api/v1/auth/me/
         "user_id": 1,
         "username": "testuser",
         "nickname": "测试用户",
-        "avatar": "/media/avatars/default.png",
-        "cover_image": null,
+        "avatar_url": "/media/avatars/default.png",
+        "cover_url": null,
         "bio": "你好世界",
         "email": "",
         "real_name": "张三",
         "show_real_name": false,
-        "is_admin": false
+        "is_admin": false,
+        "unread_count": 3
     }
 }
 ```
+
+> 实际接口返回字段名为 `avatar_url` 和 `cover_url`，而非 `avatar`/`cover_image`。
 
 ### 2.5 更新个人信息
 
@@ -203,24 +206,24 @@ GET /api/v1/profiles/{user_id}/
 {
     "code": 0,
     "data": {
-        "user": {
-            "user_id": 1,
-            "nickname": "测试用户",
-            "avatar": "/media/avatars/1.jpg",
-            "cover_image": "/media/covers/1.jpg",
-            "bio": "签名文字",
-            "real_name": "张三",
-            "show_real_name": true
-        },
-        "friend_status": "self",          // self/pending_sent/pending_received/accepted/none
+        "user_id": 1,
+        "nickname": "测试用户",
+        "avatar_url": "/media/avatars/1.jpg",
+        "cover_url": "/media/covers/1.jpg",
+        "bio": "签名文字",
+        "real_name": "张三",
+        "show_real_name": false,
+        "date_joined": "2026-01-01T00:00:00Z",
         "visitor_count": 42,
-        "plugins": [
-            {"type": "quiz", "name": "默契问答", "is_active": true},
-            {"type": "question_box", "name": "匿名提问箱", "is_active": true}
-        ]
+        "visitor_public": true,
+        "layout_config": null,
+        "friend_status": "self",
+        "plugins": []
     }
 }
 ```
+
+> 实际实现中用户数据**扁平化**在 `data` 顶层（无 `user` 嵌套对象），字段名为 `avatar_url`/`cover_url`。`plugins` 字段当前返回空列表 `[]`，需后续对接插件系统后填充。
 
 ### 3.2 获取用户的动态列表
 
@@ -240,22 +243,92 @@ GET /api/v1/profiles/{user_id}/visitors/
 
 **参数:** `?page=1&page_size=20`
 
+**权限控制:**
+- 如果目标用户的 `profile.visitor_public = false`，则非本人访问返回 403
+- 本人始终可查看自己的足迹
+
 **响应:**
 ```json
 {
     "code": 0,
     "data": {
-        "count": 42,
+        "total": 42,
+        "page": 1,
+        "page_size": 20,
         "results": [
             {
-                "visitor_id": 2,
+                "user_id": 2,
                 "nickname": "访客A",
-                "avatar": "/media/avatars/2.jpg",
+                "avatar_url": "/media/avatars/2.jpg",
                 "visited_at": "2026-06-22T14:30:00Z"
             }
         ]
     }
 }
+```
+
+> 分页字段使用 `total` 而非 `count`，且包含 `page` 和 `page_size`。访客字段名为 `user_id`/`avatar_url`。
+
+### 3.4 留言板
+
+**获取留言列表:**
+```
+GET /api/v1/profiles/{user_id}/guestbook/
+```
+
+**参数:** `?page=1&page_size=20`
+
+**响应:**
+```json
+{
+    "code": 0,
+    "data": {
+        "total": 10,
+        "page": 1,
+        "page_size": 20,
+        "results": [
+            {
+                "id": 1,
+                "user": {
+                    "user_id": 2,
+                    "nickname": "访客A",
+                    "avatar_url": "/media/avatars/2.jpg"
+                },
+                "content": "来看看你！",
+                "reply": "谢谢来访～",
+                "replied_at": "2026-06-22T15:00:00Z",
+                "created_at": "2026-06-22T14:30:00Z"
+            }
+        ]
+    }
+}
+```
+
+> 分页字段使用 `total/page/page_size`。作者信息嵌套在 `user` 对象中，字段名为 `avatar_url`。
+
+**发表留言:**
+```
+POST /api/v1/profiles/{user_id}/guestbook/create/
+```
+```json
+{
+    "content": "来看看你！"
+}
+```
+
+**回复留言 (主人):**
+```
+POST /api/v1/profiles/guestbook/{entry_id}/reply/
+```
+```json
+{
+    "reply": "谢谢来访～"
+}
+```
+
+**删除留言 (主人):**
+```
+DELETE /api/v1/profiles/guestbook/{entry_id}/delete/
 ```
 
 ---
@@ -327,7 +400,7 @@ GET /api/v1/friends/search/?q=关键词
 ### 5.1 发布动态
 
 ```
-POST /api/v1/posts/
+POST /api/v1/posts/create/
 ```
 
 **请求体:** multipart/form-data
@@ -356,7 +429,7 @@ GET /api/v1/posts/{post_id}/
 ### 5.4 删除动态
 
 ```
-DELETE /api/v1/posts/{post_id}/
+DELETE /api/v1/posts/{post_id}/delete/
 ```
 
 ### 5.5 点赞/取消点赞
@@ -385,7 +458,7 @@ GET /api/v1/posts/{post_id}/comments/
 ### 5.7 发表评论
 
 ```
-POST /api/v1/posts/{post_id}/comments/
+POST /api/v1/posts/{post_id}/comments/create/
 ```
 
 **请求体:**
@@ -398,7 +471,7 @@ POST /api/v1/posts/{post_id}/comments/
 ### 5.8 删除评论
 
 ```
-DELETE /api/v1/comments/{comment_id}/
+DELETE /api/v1/posts/comments/{comment_id}/delete/
 ```
 
 ---
@@ -439,7 +512,7 @@ GET /api/v1/chat/rooms/{room_id}/messages/
 ### 6.3 创建私聊房间
 
 ```
-POST /api/v1/chat/rooms/
+POST /api/v1/chat/rooms/create/
 ```
 
 **请求体:**
@@ -455,7 +528,7 @@ POST /api/v1/chat/rooms/
 ### 6.4 创建群聊
 
 ```
-POST /api/v1/chat/rooms/
+POST /api/v1/chat/rooms/create/
 ```
 
 **请求体:**
@@ -470,7 +543,7 @@ POST /api/v1/chat/rooms/
 ### 6.5 发送消息 (REST 后备)
 
 ```
-POST /api/v1/chat/rooms/{room_id}/messages/
+POST /api/v1/chat/rooms/{room_id}/messages/send/
 ```
 
 **请求体:**
@@ -490,10 +563,10 @@ POST /api/v1/chat/rooms/{room_id}/messages/
 ### 7.1 连接
 
 ```
-WebSocket URL: ws://host/ws/chat/?token=xxx
+WebSocket URL: ws://host/ws/chat/
 ```
 
-认证方式：URL 参数携带 Session Token 或 JWT
+认证方式：通过 Django Channels `AuthMiddlewareStack` 复用当前登录会话，不使用 `token` 查询参数。
 
 ### 7.2 消息格式
 
@@ -531,18 +604,10 @@ WebSocket URL: ws://host/ws/chat/?token=xxx
 | type (客户端→服务端) | 说明 |
 |---------------------|------|
 | send_message | 发送消息 |
-| typing | 正在输入 |
-| mark_read | 标记已读(二期) |
-| join_room | 加入房间（自动） |
-| leave_room | 离开房间 |
 
 | type (服务端→客户端) | 说明 |
 |---------------------|------|
 | new_message | 新消息 |
-| typing | 对方正在输入提示 |
-| user_joined | 用户加入群聊 |
-| user_left | 用户离开群聊 |
-| error | 错误信息 |
 
 ---
 
@@ -551,7 +616,7 @@ WebSocket URL: ws://host/ws/chat/?token=xxx
 ### 8.1 创建小组
 
 ```
-POST /api/v1/groups/
+POST /api/v1/groups/create/
 ```
 
 **请求体:**
@@ -603,7 +668,7 @@ POST /api/v1/groups/{group_id}/members/{user_id}/
 ### 8.7 更新小组信息 (组长)
 
 ```
-PATCH /api/v1/groups/{group_id}/
+PATCH /api/v1/groups/{group_id}/update/
 ```
 
 ### 8.8 获取小组动态
@@ -654,7 +719,7 @@ GET /api/v1/plugins/quiz/result/{friend_user_id}/
 
 **向某人提问:**
 ```
-POST /api/v1/plugins/questions/
+POST /api/v1/plugins/question-box/
 ```
 ```json
 {
@@ -665,12 +730,12 @@ POST /api/v1/plugins/questions/
 
 **获取我的提问箱(他人向我提问):**
 ```
-GET /api/v1/plugins/questions/inbox/
+GET /api/v1/plugins/question-box/inbox/
 ```
 
 **回答提问:**
 ```
-POST /api/v1/plugins/questions/{question_id}/answer/
+POST /api/v1/plugins/question-box/{question_id}/answer/
 ```
 ```json
 {
@@ -680,7 +745,7 @@ POST /api/v1/plugins/questions/{question_id}/answer/
 
 **删除提问:**
 ```
-DELETE /api/v1/plugins/questions/{question_id}/
+DELETE /api/v1/plugins/question-box/{question_id}/delete/
 ```
 
 ---
@@ -694,6 +759,8 @@ GET /api/v1/notifications/
 ```
 
 **参数:** `?page=1&page_size=20&unread_only=true`
+
+当前通知类型与代码 `Notification.Type` 保持一致：`system`、`friend_request`、`friend_accepted`、`comment`、`like`、`reply`、`quiz_invite`、`anonymous_question`。当前没有 `message` 通知类型。
 
 ### 10.2 标记已读
 
@@ -732,9 +799,10 @@ GET /api/v1/admin/posts/                      # 动态列表(含匿名者)
 DELETE /api/v1/admin/posts/{post_id}/          # 删除动态
 GET /api/v1/admin/comments/                   # 评论列表
 DELETE /api/v1/admin/comments/{comment_id}/    # 删除评论
+GET /api/v1/admin/anonymous-questions/         # 匿名提问追溯
 ```
 
-> 匿名提问: 管理员 GET 接口返回的数据中包含 `real_sender` 字段
+> 匿名提问追溯接口返回数据包含 `real_sender` 字段，前端入口为 `/admin/anonymous-questions`。
 
 ### 11.3 站点设置
 
@@ -766,22 +834,23 @@ GET /api/v1/admin/logs/                       # 日志列表
 
 ## 12. 文件上传通用接口
 
+通用上传接口已实现于 `apps.upload`，基础路径为 `/api/v1/upload/`。
+
 ### 12.1 上传文件
 
 ```
 POST /api/v1/upload/
 ```
 
-**请求体:** multipart/form-data
+**请求体:** multipart/form-data，字段名 `file`
 
 **响应:**
 ```json
 {
     "code": 0,
+    "message": "success",
     "data": {
-        "url": "/media/uploads/2026/06/22/file.pdf",
-        "size": 1024000,
-        "original_name": "文档.pdf"
+        "url": "/media/uploads/xxx.ext"
     }
 }
 ```
@@ -792,4 +861,17 @@ POST /api/v1/upload/
 POST /api/v1/upload/image/
 ```
 
-**限制:** 仅接受 jpg/png/gif/webp, 单文件最大 10MB
+**请求体:** multipart/form-data，字段名 `file`
+
+**限制:** 仅接受 jpg/png/gif/webp，并通过 `PIL.Image.verify()` 校验真实图片内容。
+
+**响应:**
+```json
+{
+    "code": 0,
+    "message": "success",
+    "data": {
+        "url": "/media/uploads/xxx.jpg"
+    }
+}
+```
