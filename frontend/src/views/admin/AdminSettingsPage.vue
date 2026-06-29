@@ -1,28 +1,35 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { adminApi } from '@/api/admin'
+import ToggleSwitch from '@/components/ToggleSwitch.vue'
+import Icon from '@/components/Icon.vue'
 
 const settings = ref({
   allow_register: true,
   site_notice: '',
   site_name: 'FallingMapleHaven',
+  site_logo: '',
+  site_favicon: '',
+  max_file_size: 50,
+  allowed_extensions: '.jpg,.jpeg,.png,.gif,.webp,.pdf,.doc,.docx,.zip,.txt,.md,.csv,.xlsx,.pptx',
 })
 const saving = ref(false)
+const loading = ref(true)
 const saved = ref(false)
 const error = ref('')
-
-function applySettings(items) {
-  for (const item of items || []) {
-    settings.value[item.key] = item.value
-  }
-}
 
 onMounted(async () => {
   try {
     const res = await adminApi.settings()
-    applySettings(res.data)
+    for (const item of res.data || []) {
+      if (item.key in settings.value) {
+        settings.value[item.key] = item.value
+      }
+    }
   } catch {
     error.value = '站点设置加载失败'
+  } finally {
+    loading.value = false
   }
 })
 
@@ -34,52 +41,74 @@ async function saveSettings() {
     await adminApi.updateSettings(settings.value)
     saved.value = true
   } catch { /* ignore */ } finally {
-    error.value = saved.value ? '' : '站点设置保存失败'
+    if (!saved.value) error.value = '站点设置保存失败'
     saving.value = false
   }
 }
 </script>
 
 <template>
-  <div>
-    <h2 class="text-xl font-bold text-text-primary mb-6">站点设置</h2>
-    <p v-if="error" class="mb-4 text-sm text-red-500">{{ error }}</p>
-    <div class="bg-white rounded-xl border border-border p-6 max-w-lg space-y-5">
-      <div>
-        <label class="flex items-center gap-3 cursor-pointer">
-          <input
-            v-model="settings.allow_register"
-            type="checkbox"
-            class="rounded border-border text-maple-600 focus:ring-maple-600"
-          />
-          <span class="text-sm text-text-primary">允许新用户注册</span>
-        </label>
+  <div class="space-y-6 animate-fade-in">
+    <h2 class="page-title">站点设置</h2>
+    <p v-if="error" class="text-sm text-red-500">{{ error }}</p>
+
+    <div v-if="loading" class="card-base p-6 max-w-lg space-y-5">
+      <div v-for="i in 4" :key="i" class="space-y-2">
+        <div class="skeleton h-4 w-24" />
+        <div class="skeleton h-10 w-full" />
       </div>
-      <div>
-        <label class="block text-sm font-medium text-text-primary mb-1">网站名称</label>
-        <input
-          v-model="settings.site_name"
-          type="text"
-          class="w-full px-3 py-2 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-maple-600/20 focus:border-maple-600"
-        />
+    </div>
+
+    <div v-else class="card-base p-6 max-w-lg space-y-5">
+      <div class="flex items-center justify-between py-1">
+        <span class="text-sm text-text-primary">允许新用户注册</span>
+        <ToggleSwitch v-model="settings.allow_register" />
       </div>
+
       <div>
-        <label class="block text-sm font-medium text-text-primary mb-1">站点公告</label>
+        <label class="block text-sm font-medium text-text-primary mb-1.5">网站名称</label>
+        <input v-model="settings.site_name" type="text" class="input-base w-full" />
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium text-text-primary mb-1.5">站点公告</label>
         <textarea
           v-model="settings.site_notice"
           rows="4"
           placeholder="输入公告内容..."
-          class="w-full px-3 py-2 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-maple-600/20 focus:border-maple-600 resize-none"
+          class="input-base w-full resize-none"
         />
       </div>
-      <button
-        @click="saveSettings"
-        :disabled="saving"
-        class="px-5 py-2 bg-maple-600 text-white text-sm rounded-lg hover:bg-maple-700 transition-colors disabled:opacity-50 cursor-pointer"
-      >
-        {{ saving ? '保存中...' : '保存设置' }}
-      </button>
-      <p v-if="saved" class="text-sm text-green-600">设置已保存</p>
+
+      <div>
+        <label class="block text-sm font-medium text-text-primary mb-1.5">站点 Logo (URL 路径)</label>
+        <input v-model="settings.site_logo" type="text" placeholder="/static/logo.png" class="input-base w-full" />
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium text-text-primary mb-1.5">站点 Favicon (URL 路径)</label>
+        <input v-model="settings.site_favicon" type="text" placeholder="/static/favicon.ico" class="input-base w-full" />
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium text-text-primary mb-1.5">最大文件上传大小 (MB)</label>
+        <input v-model.number="settings.max_file_size" type="number" min="1" max="500" class="input-base w-full" />
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium text-text-primary mb-1.5">允许上传文件扩展名</label>
+        <input v-model="settings.allowed_extensions" type="text" class="input-base w-full" />
+      </div>
+
+      <div class="flex items-center gap-3 pt-2">
+        <button @click="saveSettings" :disabled="saving" class="btn-primary cursor-pointer">
+          <Icon name="check" :size="15" />
+          {{ saving ? '保存中...' : '保存设置' }}
+        </button>
+        <span v-if="saved" class="text-sm text-green-600 flex items-center gap-1">
+          <Icon name="check" :size="14" /> 设置已保存
+        </span>
+      </div>
     </div>
   </div>
 </template>

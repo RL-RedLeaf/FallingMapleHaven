@@ -9,9 +9,12 @@ from apps.admin_dashboard.views import (
     AdminAnonymousQuestionsView,
     AdminPluginListView,
     AdminPluginUpdateView,
+    AdminPluginConfigView,
     AdminSettingsView,
     AdminStatsView,
     AdminLogsView,
+    AdminLogActionsView,
+    AdminTrendsView,
 )
 
 urlpatterns = [
@@ -23,8 +26,11 @@ urlpatterns = [
     path("comments/<int:pk>/", AdminCommentDeleteView.as_view(), name="admin-comment-delete"),
     path("anonymous-questions/", AdminAnonymousQuestionsView.as_view(), name="admin-anonymous-questions"),
     path("plugins/", AdminPluginListView.as_view(), name="admin-plugins"),
+    path("plugins/configs/", AdminPluginConfigView.as_view(), name="admin-plugin-configs"),
     path("plugins/<int:pk>/", AdminPluginUpdateView.as_view(), name="admin-plugin-update"),
     path("settings/", AdminSettingsView.as_view(), name="admin-settings"),
     path("stats/", AdminStatsView.as_view(), name="admin-stats"),
     path("logs/", AdminLogsView.as_view(), name="admin-logs"),
+    path("logs/actions/", AdminLogActionsView.as_view(), name="admin-log-actions"),
+    path("trends/", AdminTrendsView.as_view(), name="admin-trends"),
 ]

@@ -2,6 +2,7 @@
 import { ref } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
+import Icon from '@/components/Icon.vue'
 import { useToast } from '@/composables/useToast'
 
 const authStore = useAuthStore()
@@ -65,47 +66,88 @@ async function handleRegister() {
 </script>
 
 <template>
-  <div class="min-h-screen flex items-center justify-center px-4">
-    <div class="w-full max-w-sm bg-white rounded-2xl shadow-lg p-8">
-      <h1 class="text-2xl font-bold text-maple-600 text-center mb-2">FallingMapleHaven</h1>
-      <p class="text-text-secondary text-center text-sm mb-8">创建你的账号</p>
-      <form @submit.prevent="handleRegister" class="space-y-4">
-        <div>
-          <label class="block text-sm font-medium text-text-primary mb-1.5">用户名 <span class="text-red-500">*</span></label>
-          <input v-model="username" type="text" placeholder="请输入用户名" class="w-full px-4 py-2.5 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-maple-600/20 focus:border-maple-600" />
+  <div class="min-h-screen flex items-center justify-center px-4 py-8">
+    <div class="w-full max-w-sm animate-scale-in">
+      <div class="bg-white rounded-2xl shadow-modal p-8">
+        <div class="flex justify-center mb-4">
+          <div class="w-14 h-14 rounded-2xl bg-maple-600 flex items-center justify-center text-white text-2xl font-bold shadow-float">枫</div>
         </div>
-        <div>
-          <label class="block text-sm font-medium text-text-primary mb-1.5">昵称 <span class="text-red-500">*</span></label>
-          <input v-model="nickname" type="text" placeholder="请输入昵称" class="w-full px-4 py-2.5 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-maple-600/20 focus:border-maple-600" />
-        </div>
-        <div>
-          <label class="block text-sm font-medium text-text-primary mb-1.5">密码 <span class="text-red-500">*</span></label>
-          <div class="relative">
-            <input v-model="password" :type="showPassword ? 'text' : 'password'" placeholder="至少8位，需包含字母、数字和特殊字符" class="w-full px-4 py-2.5 pr-10 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-maple-600/20 focus:border-maple-600" />
-            <button type="button" @click="showPassword = !showPassword" class="absolute right-3 top-1/2 -translate-y-1/2 text-text-secondary hover:text-maple-600 transition-colors cursor-pointer text-sm select-none" :aria-label="showPassword ? '隐藏密码' : '显示密码'">{{ showPassword ? '🙈' : '👁️' }}</button>
+        <h1 class="text-xl font-bold text-text-primary text-center mb-1">FallingMapleHaven</h1>
+        <p class="text-text-secondary text-center text-sm mb-8">创建你的账号</p>
+        <form @submit.prevent="handleRegister" class="space-y-4">
+          <div>
+            <label class="block text-sm font-medium text-text-primary mb-1.5" for="reg-username">用户名 <span class="text-red-500">*</span></label>
+            <input id="reg-username" v-model="username" type="text" placeholder="请输入用户名" class="input-base" autocomplete="username" />
           </div>
-          <p class="text-xs text-text-secondary mt-1">密码需至少8位，包含字母、数字和至少一个特殊字符</p>
-        </div>
-        <div>
-          <label class="block text-sm font-medium text-text-primary mb-1.5">确认密码 <span class="text-red-500">*</span></label>
-          <div class="relative">
-            <input v-model="confirmPassword" :type="showConfirm ? 'text' : 'password'" placeholder="再次输入密码" class="w-full px-4 py-2.5 pr-10 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-maple-600/20 focus:border-maple-600" />
-            <button type="button" @click="showConfirm = !showConfirm" class="absolute right-3 top-1/2 -translate-y-1/2 text-text-secondary hover:text-maple-600 transition-colors cursor-pointer text-sm select-none" :aria-label="showConfirm ? '隐藏密码' : '显示密码'">{{ showConfirm ? '🙈' : '👁️' }}</button>
+          <div>
+            <label class="block text-sm font-medium text-text-primary mb-1.5" for="reg-nickname">昵称 <span class="text-red-500">*</span></label>
+            <input id="reg-nickname" v-model="nickname" type="text" placeholder="请输入昵称" class="input-base" autocomplete="name" />
           </div>
-        </div>
-        <div>
-          <label class="block text-sm font-medium text-text-primary mb-1.5">邮箱 <span class="text-text-secondary">(可选)</span></label>
-          <input v-model="email" type="email" placeholder="example@mail.com" class="w-full px-4 py-2.5 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-maple-600/20 focus:border-maple-600" />
-        </div>
-        <p v-if="error" class="text-red-500 text-sm">{{ error }}</p>
-        <button type="submit" :disabled="loading" class="w-full py-2.5 bg-maple-600 text-white rounded-lg text-sm font-medium hover:bg-maple-700 disabled:opacity-60 disabled:cursor-not-allowed transition-colors">
-          {{ loading ? '注册中...' : '注册' }}
-        </button>
-      </form>
-      <p class="text-center text-sm text-text-secondary mt-6">
-        已有账号？
-        <RouterLink :to="`/login${route.query.next ? '?next=' + encodeURIComponent(route.query.next) : ''}`" class="text-maple-600 hover:underline">去登录</RouterLink>
-      </p>
+          <div>
+            <label class="block text-sm font-medium text-text-primary mb-1.5" for="reg-password">密码 <span class="text-red-500">*</span></label>
+            <div class="relative">
+              <input id="reg-password" v-model="password" :type="showPassword ? 'text' : 'password'" placeholder="至少8位，需包含字母、数字和特殊字符" class="input-base !pr-10" autocomplete="new-password" />
+              <button type="button" @click="showPassword = !showPassword" class="absolute right-3 top-1/2 -translate-y-1/2 text-text-secondary hover:text-maple-600 transition-colors cursor-pointer min-h-[44px] min-w-[44px] flex items-center justify-center" :aria-label="showPassword ? '隐藏密码' : '显示密码'">
+                <Icon :name="showPassword ? 'eyeOff' : 'eye'" :size="18" />
+              </button>
+            </div>
+            <p class="text-xs text-text-secondary mt-1.5 flex items-center gap-1">
+              <Icon name="info" :size="12" /> 密码需至少8位，包含字母、数字和至少一个特殊字符
+            </p>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-text-primary mb-1.5" for="reg-confirm">确认密码 <span class="text-red-500">*</span></label>
+            <div class="relative">
+              <input id="reg-confirm" v-model="confirmPassword" :type="showConfirm ? 'text' : 'password'" placeholder="再次输入密码" class="input-base !pr-10" autocomplete="new-password" />
+              <button type="button" @click="showConfirm = !showConfirm" class="absolute right-3 top-1/2 -translate-y-1/2 text-text-secondary hover:text-maple-600 transition-colors cursor-pointer min-h-[44px] min-w-[44px] flex items-center justify-center" :aria-label="showConfirm ? '隐藏密码' : '显示密码'">
+                <Icon :name="showConfirm ? 'eyeOff' : 'eye'" :size="18" />
+              </button>
+            </div>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-text-primary mb-1.5" for="reg-email">邮箱 <span class="text-text-secondary">(可选)</span></label>
+            <input id="reg-email" v-model="email" type="email" placeholder="example@mail.com" class="input-base" autocomplete="email" />
+          </div>
+          <Transition name="fade">
+            <p v-if="error" class="text-red-500 text-sm flex items-center gap-1.5">
+              <Icon name="alertCircle" :size="14" /> {{ error }}
+            </p>
+          </Transition>
+          <button type="submit" :disabled="loading" class="w-full py-2.5 btn-primary text-sm flex items-center justify-center gap-2">
+            <Icon v-if="loading" name="loader" :size="16" class="animate-spin" />
+            <Icon v-else name="userPlus" :size="16" />
+            {{ loading ? '注册中...' : '注册' }}
+          </button>
+        </form>
+        <p class="text-center text-sm text-text-secondary mt-6">
+          已有账号？
+          <RouterLink
+            :to="`/login${route.query.next ? '?next=' + encodeURIComponent(route.query.next) : ''}`"
+            class="text-maple-600 hover:text-maple-700 font-medium transition-colors"
+          >
+            去登录
+          </RouterLink>
+        </p>
+      </div>
     </div>
   </div>
 </template>
+
+<style scoped>
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.2s ease;
+}
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}
+
+.animate-spin {
+  animation: spin 1s linear infinite;
+}
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+</style>

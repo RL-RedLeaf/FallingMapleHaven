@@ -5,6 +5,8 @@ import { useAuthStore } from '@/stores/auth'
 import { friendApi } from '@/api/friends'
 import { quizApi } from '@/api/plugin'
 import TabBar from '@/components/TabBar.vue'
+import Icon from '@/components/Icon.vue'
+import SelectField from '@/components/SelectField.vue'
 
 const route = useRoute()
 const authStore = useAuthStore()
@@ -105,15 +107,11 @@ async function fetchResult() {
     <div v-if="activeTab === 'create'" class="space-y-4 max-w-lg">
       <div>
         <label class="block text-sm font-medium text-text-primary mb-1">选择好友</label>
-        <select
+        <SelectField
           v-model="selectedFriendId"
-          class="w-full px-3 py-2 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-maple-600/20 focus:border-maple-600"
-        >
-          <option :value="null" disabled>请选择好友</option>
-          <option v-for="f in friends" :key="f.id || f.user_id" :value="f.id || f.user_id">
-            {{ f.nickname || f.username }}
-          </option>
-        </select>
+          :options="friends.map(f => ({ value: f.id || f.user_id, label: f.nickname || f.username }))"
+          placeholder="请选择好友"
+        />
       </div>
       <div>
         <label class="block text-sm font-medium text-text-primary mb-1">题目</label>
@@ -121,7 +119,7 @@ async function fetchResult() {
           v-model="questionText"
           type="text"
           placeholder="输入题目..."
-          class="w-full px-3 py-2 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-maple-600/20 focus:border-maple-600"
+          class="input-base"
         />
       </div>
       <div>
@@ -130,13 +128,13 @@ async function fetchResult() {
           v-model="correctAnswer"
           type="text"
           placeholder="输入正确答案..."
-          class="w-full px-3 py-2 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-maple-600/20 focus:border-maple-600"
+          class="input-base"
         />
       </div>
       <button
         @click="submitQuestion"
         :disabled="submitting || !selectedFriendId || !questionText.trim() || !correctAnswer.trim()"
-        class="px-5 py-2.5 bg-maple-600 text-white text-sm rounded-lg hover:bg-maple-700 transition-colors disabled:opacity-50 cursor-pointer"
+        class="btn-primary px-5 py-2.5"
       >
         {{ submitting ? '提交中...' : '提交题目' }}
       </button>
@@ -151,7 +149,7 @@ async function fetchResult() {
       <div
         v-for="q in receivedQuestions"
         :key="q.id"
-        class="bg-white rounded-xl border border-border p-4 space-y-3"
+        class="card-base p-4 space-y-3"
       >
         <div class="text-sm text-text-secondary">来自: {{ q.from_user?.nickname || q.from_user?.username || '匿名' }}</div>
         <p class="text-sm font-medium text-text-primary">{{ q.question }}</p>
@@ -160,12 +158,12 @@ async function fetchResult() {
             v-model="answerText[q.id]"
             type="text"
             placeholder="输入答案..."
-            class="flex-1 px-3 py-2 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-maple-600/20 focus:border-maple-600"
+            class="flex-1 input-base"
             @keyup.enter="submitAnswer(q)"
           />
           <button
             @click="submitAnswer(q)"
-            class="px-4 py-2 bg-maple-600 text-white text-sm rounded-lg hover:bg-maple-700 transition-colors cursor-pointer"
+            class="btn-primary"
           >
             提交
           </button>
@@ -180,16 +178,12 @@ async function fetchResult() {
     <div v-if="activeTab === 'match'" class="space-y-4 max-w-lg">
       <div>
         <label class="block text-sm font-medium text-text-primary mb-1">选择好友查看匹配度</label>
-        <select
+        <SelectField
           v-model="matchFriendId"
-          @change="fetchResult"
-          class="w-full px-3 py-2 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-maple-600/20 focus:border-maple-600"
-        >
-          <option :value="null" disabled>请选择好友</option>
-          <option v-for="f in friends" :key="f.id || f.user_id" :value="f.id || f.user_id">
-            {{ f.nickname || f.username }}
-          </option>
-        </select>
+          :options="friends.map(f => ({ value: f.id || f.user_id, label: f.nickname || f.username }))"
+          placeholder="请选择好友"
+          @update:model-value="fetchResult"
+        />
       </div>
       <div v-if="loadingMatch" class="text-center text-text-secondary py-4">加载中...</div>
       <div v-else-if="matchResult" class="bg-white rounded-xl border border-border p-6 text-center space-y-3">

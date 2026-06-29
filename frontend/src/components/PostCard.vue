@@ -4,11 +4,15 @@ import { useRouter, useRoute } from 'vue-router'
 import { postApi } from '@/api/posts'
 import { useFeedStore } from '@/stores/feed'
 import { useAuthStore } from '@/stores/auth'
+import { useConfirm } from '@/composables/useConfirm'
 import { relativeTime } from '@/utils/time'
 import PostImageGrid from './PostImageGrid.vue'
 import PostActions from './PostActions.vue'
 import CommentSection from './CommentSection.vue'
 import AvatarImage from './AvatarImage.vue'
+import Icon from './Icon.vue'
+
+const { confirm: confirmDelete } = useConfirm()
 
 const props = defineProps({
   post: { type: Object, required: true },
@@ -41,6 +45,13 @@ async function loadComments() {
   } catch { /* ignore */ }
 }
 
+async function deletePost() {
+  if (!await confirmDelete({ title: '删除动态', message: '确认删除这条动态？此操作不可撤销。', variant: 'danger', confirmText: '删除' })) return
+  try {
+    await feedStore.deletePost(props.post.id)
+  } catch { /* ignore */ }
+}
+
 function onCommentDeleted(commentId) {
   comments.value = comments.value.filter(comment => comment.id !== commentId)
   if (props.post.comment_count > 0) {
@@ -55,12 +66,14 @@ function goToProfile() {
 </script>
 
 <template>
-  <div class="bg-white rounded-2xl shadow-sm border border-border p-5 space-y-3">
+  <div class="group/card card-base p-5 space-y-3 md:hover:-translate-y-1.5 md:hover:shadow-[0_8px_28px_rgba(0,0,0,0.10)] transition-all duration-200 ease-out border-l-[3px] border-l-transparent hover:border-l-maple-600">
     <div class="flex items-center gap-3">
-      <AvatarImage :user="post.user" size="sm" clickable @click="goToProfile" />
+      <div class="transition-transform duration-200 group-hover/card:scale-105">
+        <AvatarImage :user="post.user" size="sm" clickable @click="goToProfile" />
+      </div>
       <div class="flex-1 min-w-0">
         <div class="flex items-center gap-2">
-          <span class="text-sm font-medium text-text-primary cursor-pointer hover:text-maple-600" @click="goToProfile">
+          <span class="text-sm font-medium text-text-primary cursor-pointer hover:text-maple-600 transition-colors" @click="goToProfile">
             {{ post.user?.nickname || post.user?.username }}
           </span>
           <span v-if="post.visibility === 'friends'" class="text-[10px] px-1.5 py-0.5 bg-maple-100 text-maple-600 rounded">仅好友</span>
@@ -68,6 +81,13 @@ function goToProfile() {
         </div>
         <span class="text-xs text-text-secondary">{{ relativeTime(post.created_at) }}</span>
       </div>
+      <button
+        v-if="authStore.user && (authStore.user.user_id === post.user?.user_id || authStore.user.user_id === post.user?.id || authStore.isAdmin)"
+        @click="deletePost"
+        class="text-xs text-red-400 hover:text-red-500 transition-colors flex-shrink-0 ml-2 cursor-pointer"
+      >
+        删除
+      </button>
     </div>
 
     <div v-if="post.content">
@@ -91,9 +111,9 @@ function goToProfile() {
         :key="file.id"
         :href="file.file"
         target="_blank"
-        class="flex items-center gap-2 text-sm text-maple-600 hover:text-maple-700"
+        class="flex items-center gap-2 text-sm text-maple-600 hover:text-maple-700 transition-colors"
       >
-        <span>📎</span>
+        <Icon name="paperclip" :size="14" />
         <span class="truncate">{{ file.name }}</span>
       </a>
     </div>
@@ -104,14 +124,14 @@ function goToProfile() {
           :to="`/login?next=${encodeURIComponent(route.fullPath)}`"
           class="flex items-center gap-1.5 hover:text-maple-600 transition-colors"
         >
-          <span class="text-lg">🤍</span>
+          <Icon name="heart" :size="16" />
           <span>{{ post.like_count || '' }}</span>
         </RouterLink>
         <RouterLink
           :to="`/login?next=${encodeURIComponent(route.fullPath)}`"
           class="flex items-center gap-1.5 hover:text-maple-600 transition-colors"
         >
-          <span class="text-lg">💬</span>
+          <Icon name="messageCircle" :size="16" />
           <span>{{ post.comment_count || '' }}</span>
         </RouterLink>
       </div>

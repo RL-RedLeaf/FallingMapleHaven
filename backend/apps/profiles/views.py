@@ -288,3 +288,56 @@ class GuestbookDeleteView(APIView):
 
         entry.delete()
         return api_response(message="留言已删除")
+
+
+class ProfileAdminView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, user_id):
+        if not request.user.is_staff:
+            return api_response(code=40003, message="无权访问", data=None, status=status.HTTP_403_FORBIDDEN)
+        try:
+            target = User.objects.get(pk=user_id)
+        except User.DoesNotExist:
+            return api_response(code=40004, message="用户不存在", data=None, status=status.HTTP_404_NOT_FOUND)
+        return api_response(data={
+            "user_id": target.id,
+            "username": target.username,
+            "nickname": target.nickname,
+            "email": target.email,
+            "is_active": target.is_active,
+            "is_staff": target.is_staff,
+            "is_superuser": target.is_superuser,
+            "date_joined": target.date_joined,
+            "last_login": target.last_login,
+            "bio": target.bio,
+        })
+
+    def patch(self, request, user_id):
+        if not request.user.is_staff:
+            return api_response(code=40003, message="无权访问", data=None, status=status.HTTP_403_FORBIDDEN)
+        try:
+            target = User.objects.get(pk=user_id)
+        except User.DoesNotExist:
+            return api_response(code=40004, message="用户不存在", data=None, status=status.HTTP_404_NOT_FOUND)
+
+        allowed_fields = {"is_active"}
+        updated = {}
+        for field in allowed_fields:
+            if field in request.data:
+                setattr(target, field, request.data[field])
+                updated[field] = request.data[field]
+        target.save(update_fields=updated.keys())
+
+        from apps.admin_dashboard.models import SiteLog
+        SiteLog.objects.create(
+            user=request.user,
+            action="update_user",
+            detail={"target_user_id": target.id, "target_username": target.username, **updated},
+            ip_address=request.META.get("REMOTE_ADDR"),
+        )
+
+        return api_response(data={
+            "user_id": target.id,
+            "is_active": target.is_active,
+        })

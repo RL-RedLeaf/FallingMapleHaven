@@ -3,6 +3,7 @@ import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { groupApi } from '@/api/plugin'
+import ToggleSwitch from '@/components/ToggleSwitch.vue'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -120,15 +121,9 @@ function goToDetail(id) {
                 class="w-full px-3 py-2 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-maple-600/20 focus:border-maple-600 resize-none"
               />
             </div>
-            <div class="flex items-center gap-2">
-              <input
-                v-model="createForm.is_public"
-                type="checkbox"
-                :true-value="true"
-                :false-value="false"
-                class="rounded border-border text-maple-600 focus:ring-maple-600"
-              />
-              <label class="text-sm text-text-primary">公开小组（任何人都可加入）</label>
+            <div class="flex items-center justify-between">
+              <span class="text-sm text-text-primary">公开小组（任何人都可加入）</span>
+              <ToggleSwitch v-model="createForm.is_public" />
             </div>
           </div>
           <p v-if="createError" class="text-red-500 text-sm">{{ createError }}</p>
