@@ -1,6 +1,6 @@
 # API 与 WebSocket 接口文档 — FallingMapleHaven
 
-> 版本: v1.0  
+> 版本: v1.1（2026-06-30 按代码对齐）  
 > 面向读者: 全栈开发  
 > 基础路径: `/api/v1`
 
@@ -43,9 +43,9 @@
 
 ### 1.3 认证方式
 
-- 使用 Django Session 认证（后端渲染 Session）
-- 前端通过 `credentials: 'include'` 发送请求
-- 或使用 Token 认证（DRF 的 TokenAuthentication）
+- 使用 Django Session 认证（`AuthMiddlewareStack` 用于 WebSocket，Session 中间件用于 REST）
+- 前端通过 `credentials: 'include'` 发送请求（axios 默认配置）
+- CSRF token 通过 `GET /api/v1/auth/csrf/` 获取，axios 拦截器自动附带
 
 ---
 
@@ -67,6 +67,8 @@ POST /api/v1/auth/register/
 }
 ```
 
+**密码校验规则:** 最少8位，必须包含字母、数字和至少一个特殊字符 `!@#$%^&*()_+-=[]{}|;':",./<>?~\``
+
 **响应:**
 ```json
 {
@@ -75,7 +77,8 @@ POST /api/v1/auth/register/
     "data": {
         "user_id": 1,
         "username": "testuser",
-        "nickname": "测试用户"
+        "nickname": "测试用户",
+        "avatar_url": null
     }
 }
 ```
@@ -94,19 +97,7 @@ POST /api/v1/auth/login/
 }
 ```
 
-**响应:**
-```json
-{
-    "code": 0,
-    "message": "success",
-    "data": {
-        "user_id": 1,
-        "username": "testuser",
-        "nickname": "测试用户",
-        "avatar": "/media/avatars/default.png"
-    }
-}
-```
+**响应:** 同 `GET /api/v1/auth/me/` 返回格式，包含完整的 `UserSerializer` 字段。
 
 ### 2.3 退出登录
 
@@ -142,7 +133,7 @@ GET /api/v1/auth/me/
 }
 ```
 
-> 实际接口返回字段名为 `avatar_url` 和 `cover_url`，而非 `avatar`/`cover_image`。
+
 
 ### 2.5 更新个人信息
 
@@ -191,6 +182,22 @@ POST /api/v1/auth/cover/
 
 **请求体:** multipart/form-data, 字段名 `cover_image`
 
+### 2.9 获取 CSRF Token
+
+```
+GET /api/v1/auth/csrf/
+```
+
+**响应:**
+```json
+{
+    "code": 0,
+    "data": {
+        "csrfToken": "xxx"
+    }
+}
+```
+
 ---
 
 ## 3. 用户主页 API
@@ -198,8 +205,10 @@ POST /api/v1/auth/cover/
 ### 3.1 获取用户主页信息
 
 ```
-GET /api/v1/profiles/{user_id}/
+GET /api/v1/profiles/{username_or_id}/
 ```
+
+> 路径参数支持用户名（字符串）或用户 ID（数字）。
 
 **响应:**
 ```json
@@ -218,12 +227,28 @@ GET /api/v1/profiles/{user_id}/
         "visitor_public": true,
         "layout_config": null,
         "friend_status": "self",
-        "plugins": []
+        "plugins": [
+            {
+                "type": "quiz",
+                "name": "默契问答",
+                "icon": "heart",
+                "route": "/profile/1/plugins/quiz",
+                "data": { "friend_count": 3, "top_friends": [...] }
+            }
+        ]
     }
 }
 ```
 
-> 实际实现中用户数据**扁平化**在 `data` 顶层（无 `user` 嵌套对象），字段名为 `avatar_url`/`cover_url`。`plugins` 字段当前返回空列表 `[]`，需后续对接插件系统后填充。
+> 用户数据**扁平化**在 `data` 顶层（无 `user` 嵌套对象）。`plugins` 通过 `PluginRegistry.get_profile_plugins()` 实时返回已启用插件的数据。
+
+### 3.2 管理员查看/编辑用户主页
+
+```
+GET/PATCH /api/v1/profiles/{username_or_id}/admin/
+```
+
+> 仅管理员可访问。GET 返回用户 Profile 完整信息，PATCH 更新配置字段。
 
 ### 3.2 获取用户的动态列表
 
@@ -406,10 +431,11 @@ POST /api/v1/posts/create/
 **请求体:** multipart/form-data
 ```
 content: "今天的夕阳好美"
-visibility: "public"
-topic_tag: "分享"
-images: [File, File, ...]   // 最多9张
-files: [File, File, ...]    // 可选
+visibility: "public"       // public / friends / private
+topic_tag: "分享"          // 话题标签
+group_id: 1                // 选填，发到指定兴趣小组
+images: [File, File, ...]  // 最多9张
+files: [File, File, ...]   // 可选
 ```
 
 ### 5.2 获取广场动态
@@ -464,7 +490,8 @@ POST /api/v1/posts/{post_id}/comments/create/
 **请求体:**
 ```json
 {
-    "content": "好漂亮！"
+    "content": "好漂亮！",
+    "parent": null      // 选填，回复某条评论时传父评论 ID
 }
 ```
 
@@ -661,7 +688,7 @@ POST /api/v1/groups/{group_id}/members/{user_id}/
 **请求体:**
 ```json
 {
-    "action": "remove"    // remove / promote_admin
+    "action": "remove"    // remove / promote_admin / demote_admin
 }
 ```
 
@@ -715,16 +742,21 @@ POST /api/v1/plugins/quiz/questions/{question_id}/answer/
 GET /api/v1/plugins/quiz/result/{friend_user_id}/
 ```
 
-### 9.2 匿名提问箱
+### 9.1.1 收到的题目支持筛选
 
-**向某人提问:**
+```
+GET /api/v1/plugins/quiz/questions/received/?answered=true
+```
+
+### 9.2 匿名提问箱
 ```
 POST /api/v1/plugins/question-box/
 ```
 ```json
 {
     "recipient_id": 1,
-    "content": "你最近在看什么书？"
+    "content": "你最近在看什么书？",
+    "is_public": true      // 选填，默认 true
 }
 ```
 
@@ -732,6 +764,8 @@ POST /api/v1/plugins/question-box/
 ```
 GET /api/v1/plugins/question-box/inbox/
 ```
+
+**参数:** `?answered=true` 可选，筛选已回答/未回答的提问。
 
 **回答提问:**
 ```
@@ -787,9 +821,8 @@ GET /api/v1/notifications/unread-count/
 ### 11.1 用户管理
 
 ```
-GET /api/v1/admin/users/                      # 用户列表
-PATCH /api/v1/admin/users/{user_id}/           # 修改用户状态
-DELETE /api/v1/admin/users/{user_id}/          # 删除用户
+GET /api/v1/admin/users/                      # 用户列表（支持 ?search=关键词）
+PATCH /api/v1/admin/users/{user_id}/           # 修改用户状态（is_active / is_staff）
 ```
 
 ### 11.2 内容管理
@@ -824,54 +857,42 @@ PATCH /api/v1/admin/plugins/{plugin_id}/       # 启停插件
 GET /api/v1/admin/stats/                      # 概览数据
 ```
 
-### 11.6 操作日志
+返回:
+```json
+{
+    "total_users": 10,
+    "total_posts": 100,
+    "total_comments": 50,
+    "total_messages": 200,
+    "active_users_today": 5
+}
+```
+
+### 11.6 趋势数据
 
 ```
-GET /api/v1/admin/logs/                       # 日志列表
+GET /api/v1/admin/trends/?days=7              # 注册/发帖/消息/评论/足迹/好友趋势
+```
+
+### 11.7 操作日志
+
+```
+GET /api/v1/admin/logs/                       # 日志列表（支持 ?action=&user_id=&page=）
+GET /api/v1/admin/logs/actions/               # 所有日志操作类型列表
+```
+
+### 11.8 插件配置
+
+```
+GET /api/v1/admin/plugins/configs/            # 插件注册的管理侧边栏配置
 ```
 
 ---
 
 ## 12. 文件上传通用接口
 
-通用上传接口已实现于 `apps.upload`，基础路径为 `/api/v1/upload/`。
-
-### 12.1 上传文件
-
-```
-POST /api/v1/upload/
-```
-
-**请求体:** multipart/form-data，字段名 `file`
-
-**响应:**
-```json
-{
-    "code": 0,
-    "message": "success",
-    "data": {
-        "url": "/media/uploads/xxx.ext"
-    }
-}
-```
-
-### 12.2 上传图片
-
-```
-POST /api/v1/upload/image/
-```
-
-**请求体:** multipart/form-data，字段名 `file`
-
-**限制:** 仅接受 jpg/png/gif/webp，并通过 `PIL.Image.verify()` 校验真实图片内容。
-
-**响应:**
-```json
-{
-    "code": 0,
-    "message": "success",
-    "data": {
-        "url": "/media/uploads/xxx.jpg"
-    }
-}
-```
+> 当前版本中不包含独立的 `upload` 应用。文件上传通过各功能模块的专用接口实现：
+> - 头像上传: `POST /api/v1/auth/avatar/`
+> - 封面上传: `POST /api/v1/auth/cover/`
+> - 动态图片: `POST /api/v1/posts/create/` (multipart, 字段 `images`)
+> - 动态文件: `POST /api/v1/posts/create/` (multipart, 字段 `files`)
