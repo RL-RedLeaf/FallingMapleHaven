@@ -26,3 +26,14 @@ class QuestionBoxPlugin(BasePlugin):
             },
             "route": f"/profile/{user_id}/plugins/question-box",
         }
+
+    def get_admin_config(self):
+        return {
+            "sidebar": [
+                {
+                    "path": "anonymous-questions",
+                    "name": "提问箱管理",
+                    "icon": "🕵️",
+                }
+            ]
+        }

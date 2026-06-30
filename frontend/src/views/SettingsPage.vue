@@ -3,6 +3,8 @@ import { ref, onMounted } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 import { authApi } from '@/api/auth'
 import AvatarImage from '@/components/AvatarImage.vue'
+import ToggleSwitch from '@/components/ToggleSwitch.vue'
+import Icon from '@/components/Icon.vue'
 import { useToast } from '@/composables/useToast'
 
 const authStore = useAuthStore()
@@ -197,31 +199,13 @@ async function changePassword() {
         <label class="block text-sm font-medium text-text-primary mb-1.5">真实姓名</label>
         <input v-model="real_name" type="text" class="w-full px-4 py-2.5 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-maple-600/20 focus:border-maple-600" />
       </div>
-      <div class="flex items-center gap-3">
+      <div class="flex items-center gap-3 py-1">
         <label class="text-sm font-medium text-text-primary">公开真实姓名</label>
-        <button
-          @click="show_real_name = !show_real_name"
-          class="relative w-10 h-5 rounded-full transition-colors"
-          :class="show_real_name ? 'bg-maple-600' : 'bg-gray-300'"
-        >
-          <span
-            class="absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform"
-            :class="show_real_name ? 'translate-x-[1.35rem]' : 'translate-x-0.5'"
-          />
-        </button>
+        <ToggleSwitch v-model="show_real_name" />
       </div>
-      <div class="flex items-center gap-3">
+      <div class="flex items-center gap-3 py-1">
         <label class="text-sm font-medium text-text-primary">足迹对外可见</label>
-        <button
-          @click="visitor_public = !visitor_public"
-          class="relative w-10 h-5 rounded-full transition-colors"
-          :class="visitor_public ? 'bg-maple-600' : 'bg-gray-300'"
-        >
-          <span
-            class="absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform"
-            :class="visitor_public ? 'translate-x-[1.35rem]' : 'translate-x-0.5'"
-          />
-        </button>
+        <ToggleSwitch v-model="visitor_public" />
       </div>
 
       <div class="flex items-center gap-3">

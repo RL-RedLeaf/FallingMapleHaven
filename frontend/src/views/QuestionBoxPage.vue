@@ -1,8 +1,10 @@
 <script setup>
 import { ref, onMounted, computed } from 'vue'
 import { questionBoxApi } from '@/api/plugin'
+import { useAuthStore } from '@/stores/auth'
 import TabBar from '@/components/TabBar.vue'
 
+const authStore = useAuthStore()
 const activeTab = ref('inbox')
 const inboxQuestions = ref([])
 const loading = ref(false)
@@ -71,6 +73,9 @@ const unansweredQuestions = computed(() =>
           <div class="flex items-start justify-between">
             <div>
               <p class="text-sm text-text-primary">{{ q.content }}</p>
+              <div v-if="authStore.isAdmin && q.real_sender" class="text-xs text-red-500 mt-1">
+                真实提问者: {{ q.real_sender.nickname }} (ID: {{ q.real_sender.user_id }})
+              </div>
               <span class="text-xs text-text-secondary mt-1 inline-block">未回答</span>
             </div>
             <button
@@ -109,6 +114,9 @@ const unansweredQuestions = computed(() =>
         class="bg-white rounded-xl border border-border p-4 space-y-2"
       >
         <p class="text-sm text-text-primary">Q: {{ q.content }}</p>
+        <div v-if="authStore.isAdmin && q.real_sender" class="text-xs text-red-500">
+          真实提问者: {{ q.real_sender.nickname }} (ID: {{ q.real_sender.user_id }})
+        </div>
         <div class="pl-3 border-l-2 border-maple-400">
           <p class="text-sm text-maple-700">A: {{ q.answer }}</p>
         </div>

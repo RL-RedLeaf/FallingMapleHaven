@@ -3,11 +3,17 @@ import { ref, onMounted, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { profileApi } from '@/api/profiles'
+import { useConfirm } from '@/composables/useConfirm'
 import { relativeTime } from '@/utils/time'
 import PostCard from '@/components/PostCard.vue'
 import FriendButton from '@/components/FriendButton.vue'
+import PluginEntryGrid from '@/components/PluginEntryGrid.vue'
+import GuestbookBoard from '@/components/GuestbookBoard.vue'
 import AvatarImage from '@/components/AvatarImage.vue'
+import Icon from '@/components/Icon.vue'
 import TabBar from '@/components/TabBar.vue'
+
+const { confirm: confirmAction } = useConfirm()
 
 const route = useRoute()
 const router = useRouter()
@@ -19,8 +25,6 @@ const activeTab = ref('posts')
 const posts = ref([])
 const visitors = ref([])
 const guestbookEntries = ref([])
-const guestbookContent = ref('')
-const submittingGuestbook = ref(false)
 const postsLoading = ref(false)
 
 const userId = computed(() => {
@@ -42,16 +46,12 @@ const tabs = computed(() => {
   return items
 })
 
-const iconMap = { 'help-circle': '❓', 'message-question': '📬' }
 const pluginCards = computed(() => {
   const cards = (profile.value?.plugins || []).map(p => ({
-    name: p.name,
-    icon: iconMap[p.icon] || '🔌',
-    desc: p.description,
-    route: p.route,
+    name: p.name, icon: p.icon || 'helpCircle', desc: p.description, route: p.route,
   }))
   cards.push({
-    name: '留言板', icon: '✍️', desc: '给我留言',
+    name: '留言板', icon: 'messageSquare', desc: '给我留言',
     route: `/profile/${userId.value}/guestbook`,
   })
   return cards
@@ -103,81 +103,76 @@ function onTabChange(tab) {
   if (tab === 'guestbook') fetchGuestbook()
 }
 
-async function submitGuestbook() {
-  if (!guestbookContent.value.trim()) return
-  submittingGuestbook.value = true
-  try {
-    const res = await profileApi.createGuestbook(userId.value, guestbookContent.value.trim())
-    guestbookEntries.value.unshift(res.data)
-    guestbookContent.value = ''
-  } catch { /* ignore */ } finally {
-    submittingGuestbook.value = false
-  }
-}
-
-async function replyGuestbook(entryId, replyText) {
-  if (!replyText.trim()) return
-  try {
-    const res = await profileApi.replyGuestbook(entryId, replyText.trim())
-    const entry = guestbookEntries.value.find(e => e.id === entryId)
-    if (entry) entry.reply = res.data.reply
-  } catch { /* ignore */ }
-}
-
-async function deleteGuestbook(entryId) {
-  if (!confirm('确认删除这条留言？')) return
-  try {
-    await profileApi.deleteGuestbook(entryId)
-    guestbookEntries.value = guestbookEntries.value.filter(e => e.id !== entryId)
-  } catch { /* ignore */ }
-}
-
 function goToPlugin(plugin) {
-  if (authStore.isAuthenticated) {
-    router.push(plugin.route)
-  } else {
-    router.push(`/login?next=${plugin.route}`)
+  router.push(authStore.isAuthenticated ? plugin.route : `/login?next=${plugin.route}`)
+}
+
+const showAdminPanel = ref(false)
+const adminInfo = ref(null)
+
+async function toggleAdminPanel() {
+  if (showAdminPanel.value) {
+    showAdminPanel.value = false
+    return
   }
+  try {
+    const res = await profileApi.getAdminInfo(userId.value)
+    adminInfo.value = res.data
+    showAdminPanel.value = true
+  } catch { /* ignore */ }
+}
+
+async function toggleUserBan() {
+  if (!adminInfo.value) return
+  const action = adminInfo.value.is_active ? '封禁' : '解封'
+  if (!await confirmAction({ title: `${action}用户`, message: `确认${action}此用户？此操作${action === '封禁' ? '后用户将无法登录' : '后用户可正常登录'}。`, variant: action === '封禁' ? 'danger' : 'default', confirmText: action })) return
+  try {
+    const res = await profileApi.banUser(userId.value, !adminInfo.value.is_active)
+    adminInfo.value = res.data
+  } catch { /* ignore */ }
 }
 
 function onFriendStatusChanged(status) {
   if (profile.value) profile.value.friend_status = status
 }
-
-function goToChat() {
-  router.push('/chat')
-}
 </script>
 
 <template>
-  <div v-if="loading" class="max-w-4xl mx-auto px-4 py-8 text-center text-text-secondary">
-    加载中...
+  <div v-if="loading" class="page-container">
+    <div class="space-y-4 animate-fade-in">
+      <div class="h-48 skeleton rounded-b-2xl" />
+      <div class="flex items-end gap-4 px-4 -mt-16">
+        <div class="w-24 h-24 rounded-full border-4 border-white skeleton" />
+        <div class="flex-1 space-y-2 pb-2">
+          <div class="h-5 w-32 skeleton" />
+          <div class="h-3 w-48 skeleton" />
+        </div>
+      </div>
+    </div>
   </div>
 
   <div v-else-if="profile" class="max-w-4xl mx-auto px-4 pb-8">
     <div class="relative w-full rounded-b-2xl overflow-hidden" style="aspect-ratio: 3/1">
-      <img
-        v-if="profile.cover_url"
-        :src="profile.cover_url"
-        class="w-full h-full object-cover"
-      />
+      <img v-if="profile.cover_url" :src="profile.cover_url" class="w-full h-full object-cover" />
       <div v-else class="w-full h-full bg-gradient-to-r from-maple-600 to-maple-400" />
     </div>
 
     <div class="relative px-4 -mt-12 z-10">
       <div class="flex items-end gap-4">
-        <div class="rounded-full border-4 border-white flex-shrink-0 shadow-md overflow-hidden">
+        <div class="rounded-full border-4 border-white flex-shrink-0 shadow-float overflow-hidden">
           <AvatarImage :user="profile" size="2xl" />
         </div>
         <div class="flex-1 min-w-0 pb-1">
           <h1 class="text-lg font-bold text-text-primary truncate">{{ profile.nickname || profile.username }}</h1>
-          <p v-if="profile.bio" class="text-[13px] text-text-secondary mt-0.5 truncate">{{ profile.bio }}</p>
-          <p v-if="profile.show_real_name && profile.real_name" class="text-[13px] text-text-secondary mt-0.5">真实姓名: {{ profile.real_name }}</p>
+          <p v-if="profile.bio" class="text-aux text-text-secondary mt-0.5 truncate">{{ profile.bio }}</p>
+          <p v-if="profile.show_real_name && profile.real_name" class="text-aux text-text-secondary mt-0.5">真实姓名: {{ profile.real_name }}</p>
         </div>
       </div>
 
       <div class="flex items-center gap-4 mt-3">
-        <span class="text-sm text-text-secondary">👤 {{ profile.visitor_count || 0 }} 次访问</span>
+        <span class="text-sm text-text-secondary flex items-center gap-1.5">
+          <Icon name="user" :size="14" /> {{ profile.visitor_count || 0 }} 次访问
+        </span>
         <FriendButton
           v-if="!isGuest"
           :userId="userId"
@@ -187,50 +182,77 @@ function goToChat() {
       </div>
     </div>
 
-    <div class="px-4 mt-6">
-      <div class="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
+    <div v-if="authStore.isAdmin && userId !== authStore.user?.user_id" class="px-4 mt-4">
+      <button
+        @click="toggleAdminPanel"
+        class="text-sm text-red-600 border border-red-300 px-3 py-1 rounded hover:bg-red-50"
+      >
+        {{ showAdminPanel ? '收起管理面板' : '⚙ 管理用户' }}
+      </button>
+
+      <div v-if="showAdminPanel && adminInfo" class="mt-2 p-3 bg-red-50 rounded border border-red-200 text-sm">
+        <h4 class="font-medium text-red-800 mb-2">用户管理</h4>
+        <div class="grid grid-cols-2 gap-2 text-gray-700">
+          <div>用户名: {{ adminInfo.username }}</div>
+          <div>昵称: {{ adminInfo.nickname }}</div>
+          <div>邮箱: {{ adminInfo.email || '(未设置)' }}</div>
+          <div>状态: {{ adminInfo.is_active ? '正常' : '已封禁' }}</div>
+          <div>注册时间: {{ adminInfo.date_joined }}</div>
+          <div>最后登录: {{ adminInfo.last_login || '(从未)' }}</div>
+        </div>
         <button
-          v-for="plugin in pluginCards"
-          :key="plugin.route"
-          @click="goToPlugin(plugin)"
-          class="flex items-center gap-2 px-4 py-2.5 bg-white rounded-xl border border-border shadow-sm hover:border-maple-300 hover:shadow-md transition-all flex-shrink-0 cursor-pointer"
+          @click="toggleUserBan"
+          class="mt-2 px-3 py-1 rounded text-white text-xs"
+          :class="adminInfo.is_active ? 'bg-red-600 hover:bg-red-700' : 'bg-green-600 hover:bg-green-700'"
         >
-          <span class="text-lg">{{ plugin.icon }}</span>
-          <div class="text-left">
-            <div class="text-sm font-medium text-text-primary">{{ plugin.name }}</div>
-            <div class="text-[11px] text-text-secondary">{{ plugin.desc }}</div>
-          </div>
-          <span class="text-text-secondary ml-2">›</span>
+          {{ adminInfo.is_active ? '封禁此用户' : '解封此用户' }}
         </button>
       </div>
     </div>
 
     <div class="px-4 mt-6">
+      <PluginEntryGrid :plugins="pluginCards" @navigate="goToPlugin" />
+    </div>
+
+    <div class="px-4 mt-6">
       <TabBar :tabs="tabs" :activeKey="activeTab" @update:activeKey="onTabChange" />
 
-      <div v-if="activeTab === 'posts'" class="mt-4 space-y-4">
-        <div v-if="postsLoading" class="text-center text-text-secondary py-8">加载中...</div>
+      <div v-if="activeTab === 'posts'" class="mt-4 space-y-4 animate-fade-in">
+        <div v-if="postsLoading" class="space-y-4">
+          <div v-for="i in 2" :key="i" class="card-base p-5 space-y-3">
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-full skeleton" />
+              <div class="space-y-2 flex-1">
+                <div class="h-3 w-24 skeleton" />
+                <div class="h-2.5 w-16 skeleton" />
+              </div>
+            </div>
+            <div class="h-3 w-full skeleton" />
+            <div class="h-3 w-2/3 skeleton" />
+          </div>
+        </div>
         <template v-else-if="posts.length">
           <PostCard v-for="post in posts" :key="post.id" :post="post" :showActions="false" />
         </template>
-        <div v-else class="text-center text-text-secondary py-8">暂无动态</div>
+        <div v-else class="text-center py-12 text-text-secondary">
+          <Icon name="fileText" :size="40" class="mx-auto mb-2 text-maple-300" />
+          <p>暂无动态</p>
+        </div>
       </div>
 
-      <div v-if="activeTab === 'visitors'" class="mt-4 space-y-3">
-        <div v-if="!visitors.length" class="text-center text-text-secondary py-8">暂无访客记录</div>
+      <div v-if="activeTab === 'visitors'" class="mt-4 space-y-3 animate-fade-in">
+        <div v-if="!visitors.length" class="text-center py-12 text-text-secondary">
+          <Icon name="users" :size="40" class="mx-auto mb-2 text-maple-300" />
+          <p>暂无访客记录</p>
+        </div>
         <div
           v-for="visitor in visitors"
           :key="visitor.id || visitor.user_id"
-          class="flex items-center gap-3 py-2"
+          class="flex items-center gap-3 py-2.5 border-b border-border last:border-0"
         >
-          <AvatarImage
-            :user="visitor"
-            size="md"
-            clickable
-            @click="router.push(`/profile/${visitor.user_id}`)"
-          />
+          <AvatarImage :user="visitor" size="md" clickable @click="router.push(`/profile/${visitor.user_id}`)" />
           <div class="flex-1 min-w-0">
-            <span class="text-sm font-medium text-text-primary truncate cursor-pointer hover:text-maple-600" @click="router.push(`/profile/${visitor.user_id}`)">
+            <span class="text-sm font-medium text-text-primary truncate cursor-pointer hover:text-maple-600 transition-colors" @click="router.push(`/profile/${visitor.user_id}`)">
               {{ visitor.nickname || visitor.username }}
             </span>
           </div>
@@ -238,62 +260,23 @@ function goToChat() {
         </div>
       </div>
 
-      <div v-if="activeTab === 'guestbook'" class="mt-4 space-y-4">
-        <div v-if="!isOwner && !isGuest" class="flex gap-2">
-          <input
-            v-model="guestbookContent"
-            type="text"
-            placeholder="写点什么..."
-            class="flex-1 px-4 py-2.5 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-maple-600/20 focus:border-maple-600"
-            @keyup.enter="submitGuestbook"
-          />
-          <button
-            @click="submitGuestbook"
-            :disabled="submittingGuestbook || !guestbookContent.trim()"
-            class="px-5 py-2.5 bg-maple-600 text-white text-sm rounded-lg hover:bg-maple-700 transition-colors disabled:opacity-50 cursor-pointer flex-shrink-0"
-          >
-            发送
-          </button>
-        </div>
-        <div v-if="isGuest" class="text-center py-4">
-          <RouterLink :to="`/login?next=/profile/${route.params.userId}`" class="text-maple-600 hover:underline text-sm">登录后留言</RouterLink>
-        </div>
-
-        <div v-if="!guestbookEntries.length" class="text-center text-text-secondary py-8">暂无留言</div>
-        <div v-for="entry in guestbookEntries" :key="entry.id" class="flex gap-3 py-3 border-b border-border last:border-0">
-          <AvatarImage :user="entry.user" size="sm" />
-          <div class="flex-1 min-w-0">
-            <div class="flex items-center gap-2">
-              <span class="text-sm font-medium text-text-primary">{{ entry.user?.nickname }}</span>
-              <span class="text-xs text-text-secondary">{{ relativeTime(entry.created_at) }}</span>
-            </div>
-            <p class="text-sm text-text-primary mt-1 whitespace-pre-wrap break-words">{{ entry.content }}</p>
-            <div v-if="entry.reply" class="mt-2 pl-3 border-l-2 border-maple-400">
-              <span class="text-xs font-medium text-maple-600">主人回复: </span>
-              <span class="text-sm text-text-primary">{{ entry.reply }}</span>
-            </div>
-            <div v-if="isOwner && !entry.reply" class="mt-2">
-              <input
-                type="text"
-                placeholder="回复..."
-                class="px-3 py-1.5 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-maple-600/20 focus:border-maple-600 w-48"
-                @keyup.enter="replyGuestbook(entry.id, $event.target.value); $event.target.value = ''"
-              />
-            </div>
-            <button
-              v-if="isOwner"
-              @click="deleteGuestbook(entry.id)"
-              class="mt-1 text-xs text-red-400 hover:text-red-500 transition-colors cursor-pointer"
-            >
-              删除
-            </button>
-          </div>
-        </div>
+      <div v-if="activeTab === 'guestbook'" class="mt-4 animate-fade-in">
+        <GuestbookBoard
+          :userId="userId"
+          :entries="guestbookEntries"
+          :isOwner="isOwner"
+          :isGuest="isGuest"
+          @update:entries="guestbookEntries = $event"
+        />
       </div>
     </div>
   </div>
 
-  <div v-else class="max-w-4xl mx-auto px-4 py-8 text-center text-text-secondary">
-    用户不存在
+  <div v-else class="page-container text-center">
+    <Icon name="alertCircle" :size="48" class="mx-auto mb-3 text-maple-300" />
+    <p class="text-text-secondary">用户不存在</p>
   </div>
 </template>
+
+<style scoped>
+</style>

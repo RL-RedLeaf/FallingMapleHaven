@@ -203,7 +203,7 @@ class PostDeleteView(APIView):
                 status=status.HTTP_404_NOT_FOUND,
             )
 
-        if post.author != request.user:
+        if post.author != request.user and not request.user.is_staff:
             return api_response(
                 code=40003,
                 message="仅作者可删除",
@@ -319,7 +319,7 @@ class CommentDeleteView(APIView):
                 status=status.HTTP_404_NOT_FOUND,
             )
 
-        if comment.author != request.user and comment.post.author != request.user:
+        if comment.author != request.user and comment.post.author != request.user and not request.user.is_staff:
             return api_response(
                 code=40003,
                 message="无权删除该评论",

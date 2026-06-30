@@ -19,6 +19,7 @@ from apps.common.utils import api_response
 from apps.chat.models import Message
 from apps.feed.models import Comment, Post
 from apps.plugins.models import Plugin
+from apps.plugins.registry import PluginRegistry
 
 User = get_user_model()
 
@@ -283,6 +284,26 @@ class AdminStatsView(APIView, AdminPermissionMixin):
         return api_response(data=data)
 
 
+class AdminPluginConfigView(APIView, AdminPermissionMixin):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        error = self.check_admin(request)
+        if error:
+            return error
+
+        configs = []
+        for plugin in PluginRegistry.get_all_plugins().values():
+            admin_config = plugin.get_admin_config()
+            if admin_config and admin_config.get("sidebar"):
+                configs.append({
+                    "type": plugin.plugin_type,
+                    "name": plugin.display_name,
+                    **admin_config,
+                })
+        return api_response(data=configs)
+
+
 class AdminLogsView(APIView, AdminPermissionMixin):
     permission_classes = [IsAuthenticated]
 
@@ -291,6 +312,121 @@ class AdminLogsView(APIView, AdminPermissionMixin):
         if error:
             return error
 
-        logs = SiteLog.objects.all()[:100]
-        serializer = AdminLogSerializer(logs, many=True)
-        return api_response(data=serializer.data)
+        logs = SiteLog.objects.all()
+
+        action = request.query_params.get("action", "").strip()
+        if action:
+            logs = logs.filter(action=action)
+
+        user_id = request.query_params.get("user_id", "").strip()
+        if user_id:
+            logs = logs.filter(user_id=user_id)
+
+        logs = logs.order_by("-created_at")
+
+        page = int(request.query_params.get("page", 1))
+        page_size = 50
+        total = logs.count()
+        start = (page - 1) * page_size
+        end = start + page_size
+        page_logs = logs[start:end]
+
+        serializer = AdminLogSerializer(page_logs, many=True)
+        return api_response(data={
+            "total": total,
+            "page": page,
+            "page_size": page_size,
+            "results": serializer.data,
+        })
+
+
+class AdminLogActionsView(APIView, AdminPermissionMixin):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        error = self.check_admin(request)
+        if error:
+            return error
+        actions = SiteLog.objects.values_list("action", flat=True).distinct().order_by("action")
+        return api_response(data=list(actions))
+
+
+class AdminTrendsView(APIView, AdminPermissionMixin):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        error = self.check_admin(request)
+        if error:
+            return error
+
+        from django.utils import timezone
+        from django.db.models import Count
+        from django.db.models.functions import TruncDate
+        from apps.feed.models import Post
+        from apps.accounts.models import User
+
+        days = int(request.query_params.get("days", 7))
+        since = timezone.now() - timezone.timedelta(days=days)
+
+        user_trends = (
+            User.objects.filter(date_joined__gte=since)
+            .annotate(date=TruncDate("date_joined"))
+            .values("date")
+            .annotate(count=Count("id"))
+            .order_by("date")
+        )
+
+        post_trends = (
+            Post.objects.filter(created_at__gte=since)
+            .annotate(date=TruncDate("created_at"))
+            .values("date")
+            .annotate(count=Count("id"))
+            .order_by("date")
+        )
+
+        from apps.chat.models import Message
+        from apps.feed.models import Comment
+        from apps.profiles.models import VisitRecord
+        from apps.friends.models import Friendship
+
+        msg_trends = (
+            Message.objects.filter(created_at__gte=since)
+            .annotate(date=TruncDate("created_at"))
+            .values("date")
+            .annotate(count=Count("id"))
+            .order_by("date")
+        )
+
+        comment_trends = (
+            Comment.objects.filter(created_at__gte=since)
+            .annotate(date=TruncDate("created_at"))
+            .values("date")
+            .annotate(count=Count("id"))
+            .order_by("date")
+        )
+
+        visit_trends = (
+            VisitRecord.objects.filter(visited_at__gte=since)
+            .annotate(date=TruncDate("visited_at"))
+            .values("date")
+            .annotate(count=Count("id"))
+            .order_by("date")
+        )
+
+        friend_trends = (
+            Friendship.objects.filter(created_at__gte=since)
+            .annotate(date=TruncDate("created_at"))
+            .values("date")
+            .annotate(count=Count("id"))
+            .order_by("date")
+        )
+
+        return api_response(data={
+            "days": days,
+            "users": list(user_trends),
+            "posts": list(post_trends),
+            "messages": list(msg_trends),
+            "comments": list(comment_trends),
+            "visits": list(visit_trends),
+            "friendships": list(friend_trends),
+        })

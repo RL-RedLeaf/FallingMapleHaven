@@ -13,5 +13,7 @@ export const adminApi = {
   settings: () => client.get('/admin/settings/'),
   updateSettings: (settings) => client.patch('/admin/settings/', { settings }),
   stats: () => client.get('/admin/stats/'),
-  logs: () => client.get('/admin/logs/'),
+  logs: (params = {}) => client.get('/admin/logs/', { params }),
+  logActions: () => client.get('/admin/logs/actions/'),
+  trends: (days = 7) => client.get('/admin/trends/', { params: { days } }),
 }

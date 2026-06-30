@@ -2,8 +2,11 @@
 import { ref, watch } from 'vue'
 import { postApi } from '@/api/posts'
 import { useAuthStore } from '@/stores/auth'
+import { useConfirm } from '@/composables/useConfirm'
 import { relativeTime } from '@/utils/time'
 import AvatarImage from './AvatarImage.vue'
+
+const { confirm: confirmDelete } = useConfirm()
 
 const props = defineProps({
   postId: { type: Number, required: true },
@@ -33,11 +36,13 @@ async function submitComment() {
 function canDelete(comment) {
   const currentUserId = authStore.user?.user_id
   const commentAuthorId = comment.user?.user_id || comment.user?.id
+  if (authStore.isAdmin) return true
   return currentUserId && (currentUserId === commentAuthorId || currentUserId === props.postAuthorId)
 }
 
 async function deleteComment(comment) {
   if (!canDelete(comment) || deletingIds.value[comment.id]) return
+  if (!await confirmDelete({ title: '删除评论', message: '确认删除这条评论？此操作不可撤销。', variant: 'danger', confirmText: '删除' })) return
   deletingIds.value = { ...deletingIds.value, [comment.id]: true }
   try {
     await postApi.deleteComment(comment.id)

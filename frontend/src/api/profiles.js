@@ -17,4 +17,6 @@ export const profileApi = {
   createGuestbook: (userId, content) => client.post(`/profiles/${userId}/guestbook/create/`, { content }, lookupConfig(userId)),
   replyGuestbook: (entryId, reply) => client.post(`/profiles/guestbook/${entryId}/reply/`, { reply }),
   deleteGuestbook: (entryId) => client.delete(`/profiles/guestbook/${entryId}/delete/`),
+  getAdminInfo: (userId) => client.get(`/profiles/${userId}/admin/`),
+  banUser: (userId, isActive) => client.patch(`/profiles/${userId}/admin/`, { is_active: isActive }),
 }

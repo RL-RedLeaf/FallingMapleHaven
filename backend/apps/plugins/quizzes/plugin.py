@@ -32,3 +32,14 @@ class QuizPlugin(BasePlugin):
             },
             "route": f"/profile/{user_id}/plugins/quiz",
         }
+
+    def get_admin_config(self):
+        return {
+            "sidebar": [
+                {
+                    "path": "quizzes",
+                    "name": "问答管理",
+                    "icon": "❓",
+                }
+            ]
+        }

@@ -1,5 +1,7 @@
 <script setup>
+import { ref } from 'vue'
 import { useFeedStore } from '@/stores/feed'
+import Icon from './Icon.vue'
 
 const props = defineProps({
   postId: { type: Number, required: true },
@@ -10,9 +12,12 @@ const props = defineProps({
 
 const emit = defineEmits(['toggle-comments'])
 const feedStore = useFeedStore()
+const animating = ref(false)
 
 function handleLike() {
+  animating.value = true
   feedStore.toggleLike(props.postId)
+  setTimeout(() => { animating.value = false }, 350)
 }
 </script>
 
@@ -20,17 +25,17 @@ function handleLike() {
   <div class="flex items-center gap-6 text-text-secondary text-sm">
     <button
       @click="handleLike"
-      class="flex items-center gap-1.5 hover:text-maple-600 transition-colors cursor-pointer"
-      :class="{ 'text-red-500': isLiked }"
+      class="flex items-center gap-1.5 hover:text-maple-600 transition-colors cursor-pointer select-none"
+      :class="{ 'text-red-500': isLiked, 'animate-like-pop': animating }"
     >
-      <span class="text-lg">{{ isLiked ? '❤️' : '🤍' }}</span>
+      <Icon :name="'heart'" :size="18" :fill="isLiked ? 'currentColor' : 'none'" />
       <span>{{ likeCount || '' }}</span>
     </button>
     <button
       @click="emit('toggle-comments')"
-      class="flex items-center gap-1.5 hover:text-maple-600 transition-colors cursor-pointer"
+      class="flex items-center gap-1.5 hover:text-maple-600 transition-colors cursor-pointer select-none"
     >
-      <span class="text-lg">💬</span>
+      <Icon name="messageCircle" :size="18" />
       <span>{{ commentCount || '' }}</span>
     </button>
   </div>

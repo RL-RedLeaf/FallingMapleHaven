@@ -6,9 +6,12 @@ import { friendApi } from '@/api/friends'
 import { chatApi } from '@/api/chat'
 import FriendButton from '@/components/FriendButton.vue'
 import AvatarImage from '@/components/AvatarImage.vue'
+import Icon from '@/components/Icon.vue'
+import { useToast } from '@/composables/useToast'
 
 const router = useRouter()
 const friendStore = useFriendStore()
+const toast = useToast()
 
 const activeTab = ref('list')
 const searchQuery = ref('')
@@ -91,16 +94,16 @@ function goToProfile(user) {
 </script>
 
 <template>
-  <div class="max-w-4xl mx-auto px-4 py-8">
-    <h1 class="text-3xl font-bold text-maple-700 mb-6">好友</h1>
+  <div class="page-container">
+    <h1 class="page-title">好友</h1>
 
-    <div class="flex gap-1 mb-6 bg-maple-100 rounded-xl p-1">
+    <div class="tab-nav mb-6">
       <button
         v-for="tab in tabs"
         :key="tab.key"
         @click="activeTab = tab.key"
-        class="flex-1 py-2 text-sm font-medium rounded-lg transition-colors cursor-pointer"
-        :class="activeTab === tab.key ? 'bg-white text-maple-600 shadow-sm' : 'text-text-secondary hover:text-maple-600'"
+        class="tab-btn min-h-[40px]"
+        :class="activeTab === tab.key ? 'tab-btn-active' : 'tab-btn-inactive'"
       >
         {{ tab.label }}
       </button>
