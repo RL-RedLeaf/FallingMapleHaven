@@ -47,15 +47,7 @@
 
 ### 管理后台
 
-管理员可以通过后台管理系统进行以下操作：
-
-- **用户管理**：查看用户列表、搜索筛选、封禁/解封、角色管理（普通用户/管理员/超级管理员）
-- **内容管理**：查看和删除动态、管理评论
-- **站点设置**：注册开关、站点公告、网站名称和 Logo 等基础配置
-- **插件管理**：查看插件列表、启停插件、配置插件参数
-- **数据统计**：注册用户总数、日活用户、动态发布量、评论量、聊天消息量
-- **操作日志**：记录管理员敏感操作，包括操作人、时间、内容和对象
-- **匿名追溯**：查看匿名提问的真实提问者身份
+提供用户管理、内容管理、站点设置、插件管理、数据统计、操作日志等功能，方便管理员维护站点。
 
 ### 访客浏览模式
 
@@ -292,7 +284,7 @@ npm run dev
 | `/groups/:groupId` | 小组详情 | 跳转登录 | 可访问 | 可访问 |
 | `/settings` | 个人设置 | 跳转登录 | 可访问 | 可访问 |
 | `/notifications` | 通知列表 | 跳转登录 | 可访问 | 可访问 |
-| `/admin/*` | 管理后台 | 跳转登录 | 跳转首页 | 可访问 |
+| `/admin` | 管理后台 | 跳转登录 | 跳转首页 | 可访问 |
 
 ---
 
@@ -409,21 +401,14 @@ npm run dev
 
 | 方法 | 端点 | 说明 |
 |------|------|------|
-| GET | `/admin/users/` | 用户列表 |
-| PATCH | `/admin/users/{id}/` | 修改用户状态 |
-| GET | `/admin/posts/` | 动态列表 |
-| DELETE | `/admin/posts/{id}/` | 删除动态 |
-| GET | `/admin/comments/` | 评论列表 |
-| DELETE | `/admin/comments/{id}/` | 删除评论 |
-| GET | `/admin/anonymous-questions/` | 匿名提问追溯 |
+| GET/PATCH | `/admin/users/` | 用户管理与状态修改 |
+| GET/DELETE | `/admin/posts/` | 动态管理 |
+| GET/DELETE | `/admin/comments/` | 评论管理 |
 | GET/PATCH | `/admin/settings/` | 站点设置 |
-| GET | `/admin/plugins/` | 插件列表 |
-| PATCH | `/admin/plugins/{id}/` | 启停插件 |
+| GET/PATCH | `/admin/plugins/` | 插件启停管理 |
 | GET | `/admin/stats/` | 数据统计概览 |
-| GET | `/admin/trends/` | 趋势数据 |
 | GET | `/admin/logs/` | 操作日志 |
-| GET | `/admin/logs/actions/` | 日志操作类型 |
-| GET | `/admin/plugins/configs/` | 插件管理配置 |
+| GET | `/admin/anonymous-questions/` | 匿名提问追溯 |
 
 ---
 
