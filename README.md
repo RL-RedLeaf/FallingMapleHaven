@@ -1,85 +1,143 @@
-# FallingMapleHaven
+# 枫落港 (FallingMapleHaven)
 
-面向高中同学及社交圈朋友的轻量社交平台，集个人主页展示、社交互动、即时聊天、趣味工具于一体。
+## 简介
+
+枫落港是一个面向高中同学及社交圈朋友的轻量社交平台。在这里，每个人都能拥有自己专属的个人主页，记录和分享生活日常；可以与好友实时聊天、在广场上互动；还可以通过默契问答、匿名提问箱等趣味插件增进彼此的了解。
+
+项目的名称"枫落港"取自秋叶飘落、归港停泊之意，希望为朋友们提供一个温暖、私密的线上空间。
 
 ---
 
-## 功能模块
+## 功能详情
 
-| 模块 | 说明 | 状态 |
-|------|------|------|
-| 个人主页 | 头像 / 封面 / 签名 / 访客足迹 / 留言板 | 已完成 |
-| 社交广场 | 发布图文动态、点赞评论、话题标签、可见性控制 | 已完成 |
-| 好友系统 | 用户搜索、好友申请 / 确认 / 解除 | 已完成 |
-| 即时聊天 | 私聊 + 群聊，WebSocket 实时推送，未读计数 | 已完成 |
-| 互动插件 | 默契问答、匿名提问箱，可插拔架构 | 已完成 |
-| 通知系统 | 8 种通知类型，已读管理，角标计数 | 已完成 |
-| 兴趣小组 | 创建圈子、组内动态、小组聊天室 | 已完成 |
-| 管理后台 | 用户 / 内容 / 插件管理、数据统计、操作日志 | 已完成 |
+### 用户系统
+
+支持用户名注册与登录，注册后自动创建个人主页。用户可以修改昵称、头像、封面背景图、个人签名、真实姓名等资料。密码修改需要验证旧密码，保障账户安全。
+
+### 个人主页
+
+每位用户都有一个独立的个人主页，包含资料卡区域（头像、昵称、签名、封面图）、动态时间线（按时间倒序展示该用户发布的所有动态）、插件入口区（展示已启用的互动工具卡片）和留言板（访客可留言，主人可回复或删除）。访问他人主页时会留下访客足迹，用户可以选择是否公开自己的足迹列表。
+
+### 社交广场
+
+广场聚合了所有公开和好友可见的动态，按时间倒序排列，支持分页加载。用户可以发布图文动态（最多 9 张图片 + 文件附件），并控制可见范围为公开、仅好友或仅自己。动态支持话题标签（如闲聊、分享、求助等），可按话题筛选浏览。用户可以对动态点赞（可取消）和发表评论，评论支持嵌套回复。
+
+### 好友系统
+
+用户可以通过搜索找到其他用户并发送好友申请，对方可以同意或拒绝。好友关系采用双向确认机制，解除好友则为单向操作。好友列表按昵称排序展示。
+
+### 即时聊天
+
+支持私聊和群聊两种模式。私聊无需好友关系即可发起，群聊需要创建时选择成员。所有消息通过 WebSocket 实时推送，延迟低。消息记录持久化存储，可回溯历史。聊天列表按最后消息时间排序，并显示未读消息数。
+
+### 互动插件
+
+采用可插拔架构，当前提供两款插件：
+
+- **默契问答**：用户可以向好友出题（选择或判断题），好友作答后系统自动比对并计算匹配度百分比，在出题人主页展示与各好友的匹配度。
+- **匿名提问箱**：任意用户可向目标用户匿名提问，目标用户可以选择公开回答或不回答。管理员在后台可追溯真实提问者身份。
+
+### 通知系统
+
+系统支持 8 种通知类型：好友申请、好友通过、动态点赞、动态评论、评论回复、默契问答邀请、匿名提问以及系统通知。所有通知按时间倒序排列，区分已读/未读状态，导航栏显示未读总数角标。
+
+### 兴趣小组
+
+用户可以创建兴趣小组，设置名称、简介、封面图以及是否公开可见。公开小组可直接加入，私密小组需申请。组长可以修改小组信息、移除成员、转让组长或解散小组。小组拥有独立的动态时间线（仅组内成员可见）和聊天室。
+
+### 管理后台
+
+管理员可以通过后台管理系统进行以下操作：
+
+- **用户管理**：查看用户列表、搜索筛选、封禁/解封、角色管理（普通用户/管理员/超级管理员）
+- **内容管理**：查看和删除动态、管理评论
+- **站点设置**：注册开关、站点公告、网站名称和 Logo 等基础配置
+- **插件管理**：查看插件列表、启停插件、配置插件参数
+- **数据统计**：注册用户总数、日活用户、动态发布量、评论量、聊天消息量
+- **操作日志**：记录管理员敏感操作，包括操作人、时间、内容和对象
+- **匿名追溯**：查看匿名提问的真实提问者身份
+
+### 访客浏览模式
+
+未登录用户可以浏览公开内容（广场动态、个人主页公开资料、公开小组列表等），参与交互（发布动态、点赞评论、发送消息等）则需要登录。这降低了新用户的了解门槛，同时保护了私密数据。
 
 ---
 
 ## 技术栈
 
-| 层级 | 技术 | 用途 |
-|------|------|------|
-| 前端框架 | Vue 3 + Composition API | SPA 页面 |
-| 状态管理 | Pinia 2 | 全局状态 |
-| 路由 | Vue Router 4 | 前端路由 |
-| UI 样式 | Tailwind CSS 3 | 原子化样式（秋叶主题色板） |
-| 图标 | lucide-vue-next | SVG 图标库 |
-| 构建工具 | Vite 5 | 开发服务器与打包 |
-| 后端框架 | Django 5 | 业务逻辑与 ORM |
-| API | Django REST Framework 3.15+ | RESTful 接口 |
-| 实时通信 | Django Channels 4 + daphne | WebSocket |
-| 数据库 | PostgreSQL 16 | 关系数据存储 |
-| 缓存 / 消息 | Redis 7 | Channel Layer |
-| 部署 | Docker Compose | 基础设施容器化 |
+### 前端
+
+- **Vue 3** + Composition API：组件化开发，逻辑复用灵活
+- **Pinia**：全局状态管理（auth、feed、chat、friend 四个 Store）
+- **Vue Router 4**：前端路由，支持导航守卫
+- **Tailwind CSS 3**：原子化样式，秋叶主题色板扩展
+- **lucide-vue-next**：SVG 图标库
+- **Vite 5**：开发服务器热更新 + 生产构建
+- **axios**：HTTP 客户端，自动处理 CSRF Token 和 Session 凭证
+
+### 后端
+
+- **Django 5**：核心业务逻辑与 ORM
+- **Django REST Framework 3.15+**：RESTful API
+- **Django Channels 4**：WebSocket 实时通信
+- **daphne**：ASGI 服务器
+- **PostgreSQL 16**：关系数据库
+- **Redis 7**：Channel Layer 与消息代理
+- **django-cors-headers**：跨域支持
 
 ---
 
 ## 快速开始
 
-### 环境要求
+### 准备工作
 
-- Python 3.10+
-- Node.js 18+
-- Docker & Docker Compose（用于启动 PostgreSQL 和 Redis）
+确保你的开发环境已安装：
 
-### 安装
+- Python 3.10 或更高版本
+- Node.js 18 或更高版本
+- Docker 与 Docker Compose（用于运行 PostgreSQL 和 Redis）
 
-**1. 克隆项目**
+### 第一步：启动基础设施
 
-```bash
-git clone <repo-url>
-cd FallingMapleHaven
-```
-
-**2. 启动基础设施**
+项目依赖 PostgreSQL 和 Redis，通过 Docker Compose 一键启动：
 
 ```bash
 cd docker
 docker compose up -d
 ```
 
-这将启动 PostgreSQL 16（端口 5432）和 Redis 7（端口 6379）。
+该命令会在后台启动 PostgreSQL 16（监听端口 5432）和 Redis 7（监听端口 6379），数据持久化存储在 Docker 卷中。
 
-**3. 后端设置**
+### 第二步：配置并启动后端
 
 ```bash
 cd backend
-python -m venv .venv
-source .venv/bin/activate  # Linux/Mac
-.venv\Scripts\activate     # Windows
 
+# 创建虚拟环境
+python -m venv .venv
+
+# 激活虚拟环境
+# Windows:
+.venv\Scripts\activate
+# Linux / Mac:
+source .venv/bin/activate
+
+# 安装依赖
 pip install -r requirements.txt
+
+# 执行数据库迁移
 python manage.py migrate
+
+# （可选）创建管理员账号
+python manage.py createsuperuser
+
+# 启动开发服务器
 python manage.py runserver
 ```
 
-后端将运行于 `http://localhost:8000`。
+后端启动后访问 `http://localhost:8000`，API 基础路径为 `/api/v1`。
 
-**4. 前端设置**
+### 第三步：配置并启动前端
 
 ```bash
 cd frontend
@@ -87,246 +145,374 @@ npm install
 npm run dev
 ```
 
-前端将运行于 `http://localhost:5173`，开发模式下自动代理 API 请求到后端。
+前端开发服务器运行在 `http://localhost:5173`。Vite 已配置开发代理，`/api`、`/ws`、`/media` 前缀的请求会自动转发到 Django 后端，无需额外配置跨域。
+
+### 验证
+
+打开浏览器访问 `http://localhost:5173`，可以看到枫落港的首页。注册一个新账号，即可开始体验所有功能。
 
 ---
 
-## 项目目录结构
+## 项目结构
 
 ```
-FallingMapleHaven/
-├── backend/                        # Django 后端
-│   ├── config/                     #   项目配置
-│   │   ├── settings/               #     base.py / dev.py / prod.py
-│   │   ├── urls.py                 #     根路由
-│   │   └── asgi.py                 #     Channels ASGI 入口
-│   ├── apps/
-│   │   ├── accounts/               #     用户系统（User 扩展 AbstractUser）
-│   │   ├── profiles/               #     个人主页（Profile, VisitRecord, Guestbook）
-│   │   ├── friends/                #     好友系统（Friendship）
-│   │   ├── feed/                   #     动态与广场（Post, Comment, Like）
-│   │   ├── chat/                   #     聊天系统（ChatRoom, Message, Consumer）
-│   │   ├── groups/                 #     兴趣小组（InterestGroup, GroupMember）
-│   │   ├── plugins/                #     插件系统（BasePlugin, 默契问答, 匿名提问箱）
-│   │   ├── notifications/          #     通知系统（Notification）
-│   │   └── admin_dashboard/        #     管理后台（SiteSettings, SiteLog, 统计）
-│   ├── media/                      #   用户上传文件
-│   ├── manage.py
-│   └── requirements.txt
+枫落港/ (FallingMapleHaven)
 │
-├── frontend/                       # Vue 3 前端
+├── backend/                               # Django 后端项目
+│   ├── config/                            # 项目配置
+│   │   ├── settings/
+│   │   │   ├── base.py                    # 基础配置（数据库、中间件、认证等）
+│   │   │   ├── dev.py                     # 开发环境配置
+│   │   │   └── prod.py                    # 生产环境配置
+│   │   ├── urls.py                        # 根路由注册
+│   │   ├── asgi.py                        # Channels ASGI 入口
+│   │   └── wsgi.py                        # WSGI 入口
+│   │
+│   ├── apps/                              # Django 应用
+│   │   ├── accounts/                      # 用户系统——注册、登录、资料管理
+│   │   ├── profiles/                      # 个人主页——Profile、访客足迹、留言板
+│   │   ├── friends/                       # 好友系统——申请、确认、解除
+│   │   ├── feed/                          # 动态广场——Post、Comment、Like
+│   │   ├── chat/                          # 聊天系统——ChatRoom、Message、WebSocket Consumer
+│   │   ├── groups/                        # 兴趣小组——创建、加入、管理
+│   │   ├── plugins/                       # 插件系统——BasePlugin、默契问答、匿名提问箱
+│   │   ├── notifications/                 # 通知系统——8 种通知类型
+│   │   ├── admin_dashboard/               # 管理后台——站点设置、统计、日志
+│   │   └── common/                        # 公共工具——异常处理
+│   │
+│   ├── media/                             # 用户上传的头像、封面、动态图片等
+│   ├── static/                            # 收集的静态文件
+│   ├── manage.py                          # Django 管理脚本
+│   └── requirements.txt                   # Python 依赖清单
+│
+├── frontend/                              # Vue 3 前端项目
 │   └── src/
-│       ├── api/                    #   API 请求封装（9 个模块）
-│       │   ├── client.js           #   axios 实例与拦截器
-│       │   ├── auth.js
-│       │   ├── posts.js
-│       │   ├── profiles.js
-│       │   ├── chat.js
-│       │   ├── friends.js
-│       │   ├── notifications.js
-│       │   ├── plugin.js
-│       │   └── admin.js
-│       ├── stores/                 #   Pinia 状态管理
-│       │   ├── auth.js
-│       │   ├── feed.js
-│       │   ├── chat.js
-│       │   └── friend.js
-│       ├── router/                 #   路由配置
-│       │   ├── index.js            #   主路由 + 守卫
-│       │   └── admin.js            #   管理后台子路由
-│       ├── views/                  #   16 个页面组件
-│       │   ├── HomePage.vue
-│       │   ├── LoginPage.vue
-│       │   ├── RegisterPage.vue
-│       │   ├── ProfilePage.vue
-│       │   ├── SettingsPage.vue
-│       │   ├── ChatListPage.vue
-│       │   ├── ChatRoomPage.vue
-│       │   ├── FriendsPage.vue
-│       │   ├── NotificationsPage.vue
-│       │   ├── GroupListPage.vue
-│       │   ├── GroupDetailPage.vue
-│       │   ├── QuizPage.vue
-│       │   ├── QuestionBoxPage.vue
-│       │   ├── GuestbookPage.vue
-│       │   ├── NotFoundPage.vue
-│       │   └── admin/              #   7 个管理后台子页面
-│       ├── components/             #   19 个公共组件
-│       │   ├── NavBar.vue
-│       │   ├── MobileTabBar.vue
-│       │   ├── PostCard.vue
-│       │   ├── PostCreateCard.vue
-│       │   ├── AvatarImage.vue
-│       │   ├── FriendButton.vue
-│       │   ├── PluginEntryGrid.vue
-│       │   ├── CommentSection.vue
-│       │   ├── PostActions.vue
-│       │   ├── PostImageGrid.vue
-│       │   ├── MessageBubble.vue
-│       │   ├── GuestbookBoard.vue
-│       │   ├── ConfirmDialog.vue
-│       │   ├── ToastContainer.vue
-│       │   ├── TabBar.vue
-│       │   ├── ToggleSwitch.vue
-│       │   ├── BottomSheet.vue
-│       │   ├── Icon.vue
-│       │   └── SelectField.vue
-│       ├── plugins/                #   前端插件注册
-│       │   ├── registry.js
-│       │   ├── quiz/index.js
-│       │   └── questions/index.js
-│       ├── composables/            #   组合式函数
-│       ├── utils/                  #   工具函数
-│       └── assets/                 #   全局样式与资源
+│       ├── api/                           # API 请求层
+│       │   ├── client.js                  # axios 实例、CSRF 拦截、统一错误处理
+│       │   ├── auth.js                    # 用户认证相关 API
+│       │   ├── posts.js                   # 动态相关 API
+│       │   ├── profiles.js                # 个人主页相关 API
+│       │   ├── chat.js                    # 聊天相关 API
+│       │   ├── friends.js                 # 好友相关 API
+│       │   ├── notifications.js           # 通知相关 API
+│       │   ├── plugin.js                  # 插件相关 API
+│       │   └── admin.js                   # 管理后台 API
+│       │
+│       ├── stores/                        # Pinia 状态管理
+│       │   ├── auth.js                    # 用户登录态与信息
+│       │   ├── feed.js                    # 广场动态列表与话题筛选
+│       │   ├── chat.js                    # 聊天列表、WebSocket 连接、消息缓存
+│       │   └── friend.js                  # 好友列表与申请管理
+│       │
+│       ├── router/                        # 路由配置
+│       │   ├── index.js                   # 主路由表 + 导航守卫
+│       │   └── admin.js                   # 管理后台子路由
+│       │
+│       ├── views/                         # 页面组件（共 16 个）
+│       │   ├── HomePage.vue               # 首页——广场动态流
+│       │   ├── LoginPage.vue              # 登录页
+│       │   ├── RegisterPage.vue           # 注册页
+│       │   ├── ProfilePage.vue            # 个人主页
+│       │   ├── SettingsPage.vue           # 个人设置
+│       │   ├── ChatListPage.vue           # 聊天列表
+│       │   ├── ChatRoomPage.vue           # 聊天室
+│       │   ├── FriendsPage.vue            # 好友管理
+│       │   ├── NotificationsPage.vue      # 通知列表
+│       │   ├── GroupListPage.vue          # 小组列表
+│       │   ├── GroupDetailPage.vue        # 小组详情
+│       │   ├── QuizPage.vue               # 默契问答
+│       │   ├── QuestionBoxPage.vue        # 匿名提问箱
+│       │   ├── GuestbookPage.vue          # 留言板
+│       │   ├── NotFoundPage.vue           # 404 页面
+│       │   └── admin/                     # 管理后台子页面（7 个）
+│       │
+│       ├── components/                    # 公共组件（共 19 个）
+│       │   ├── NavBar.vue                 # 桌面端顶部导航
+│       │   ├── MobileTabBar.vue           # 手机端底部导航
+│       │   ├── PostCard.vue               # 动态卡片
+│       │   ├── PostCreateCard.vue         # 动态发布表单
+│       │   ├── AvatarImage.vue            # 头像显示
+│       │   ├── FriendButton.vue           # 好友操作按钮
+│       │   ├── PluginEntryGrid.vue        # 插件入口卡片区
+│       │   ├── CommentSection.vue         # 评论区
+│       │   ├── PostActions.vue            # 点赞/评论按钮
+│       │   ├── PostImageGrid.vue          # 图片九宫格
+│       │   ├── MessageBubble.vue          # 聊天消息气泡
+│       │   ├── GuestbookBoard.vue         # 留言板组件
+│       │   ├── ConfirmDialog.vue          # 全局确认弹窗
+│       │   ├── ToastContainer.vue         # 全局 Toast 提示
+│       │   ├── TabBar.vue                 # 标签页切换栏
+│       │   ├── ToggleSwitch.vue           # 开关组件
+│       │   ├── BottomSheet.vue            # 底部弹出面板
+│       │   ├── Icon.vue                   # 图标统一封装
+│       │   └── SelectField.vue            # 下拉选择框
+│       │
+│       ├── plugins/                       # 前端插件注册
+│       │   ├── registry.js                # PluginRegistry 类
+│       │   ├── quiz/index.js              # 默契问答插件注册
+│       │   └── questions/index.js         # 匿名提问箱插件注册
+│       │
+│       ├── composables/                   # 组合式函数
+│       │   ├── useToast.js                # Toast 提示
+│       │   └── useConfirm.js              # 确认对话框
+│       │
+│       ├── utils/                         # 工具函数
+│       │   ├── time.js                    # 时间格式化
+│       │   └── ...
+│       │
+│       └── assets/                        # 全局样式
+│           └── main.css                   # Tailwind 入口 + 自定义样式
 │
 ├── docker/
-│   └── docker-compose.yml          # PostgreSQL + Redis
-├── Docs/                           # 设计文档（16 份）
-├── Plans/                          # 开发规划（5 份）
-├── AGENTS.md                       # AI 助手配置
-└── README.md
+│   └── docker-compose.yml                 # PostgreSQL 16 + Redis 7
+│
+├── Docs/                                  # 设计文档（16 份）
+├── Plans/                                 # 开发规划（5 份）
+├── AGENTS.md                              # AI 助手配置
+└── README.md                              # 本文件
 ```
 
 ---
 
-## 页面路由
+## 路由与权限
 
-| 路径 | 页面 | 权限 |
-|------|------|------|
-| `/` | 广场动态流 | 登录 / 访客 |
-| `/login` | 登录 | 未登录 |
-| `/register` | 注册 | 未登录 |
-| `/profile/:userId` | 个人主页 | 登录 / 访客 |
-| `/profile/:userId/plugins/quiz` | 默契问答 | 登录 |
-| `/profile/:userId/plugins/question-box` | 匿名提问箱 | 登录 |
-| `/profile/:userId/guestbook` | 留言板 | 登录 |
-| `/friends` | 好友管理 | 登录 |
-| `/chat` | 聊天列表 | 登录 |
-| `/chat/:roomId` | 聊天室 | 登录 |
-| `/groups` | 小组列表 | 登录 / 访客 |
-| `/groups/:groupId` | 小组详情 | 登录 |
-| `/settings` | 个人设置 | 登录 |
-| `/notifications` | 通知列表 | 登录 |
-| `/admin` | 管理后台首页 | 管理员 |
-| `/admin/users` | 用户管理 | 管理员 |
-| `/admin/posts` | 内容管理 | 管理员 |
-| `/admin/settings` | 站点设置 | 管理员 |
-| `/admin/plugins` | 插件管理 | 管理员 |
-| `/admin/stats` | 数据统计 | 管理员 |
-| `/admin/logs` | 操作日志 | 管理员 |
-| `/admin/anonymous-questions` | 匿名提问追溯 | 管理员 |
+| 路径 | 页面 | 访客 | 登录用户 | 管理员 |
+|------|------|------|----------|--------|
+| `/` | 广场动态流 | 可浏览公开动态 | 全部动态 | 全部 |
+| `/login` | 登录页 | 可访问 | 重定向到首页 | - |
+| `/register` | 注册页 | 可访问 | 重定向到首页 | - |
+| `/profile/:userId` | 个人主页 | 公开资料 | 全部资料 | 全部 |
+| `/profile/:userId/plugins/quiz` | 默契问答 | 跳转登录 | 可访问 | 可访问 |
+| `/profile/:userId/plugins/question-box` | 匿名提问箱 | 跳转登录 | 可访问 | 可访问 |
+| `/profile/:userId/guestbook` | 留言板 | 跳转登录 | 可访问 | 可访问 |
+| `/friends` | 好友管理 | 跳转登录 | 可访问 | 可访问 |
+| `/chat` | 聊天列表 | 跳转登录 | 可访问 | 可访问 |
+| `/chat/:roomId` | 聊天室 | 跳转登录 | 可访问 | 可访问 |
+| `/groups` | 小组列表 | 公开小组 | 全部小组 | 全部 |
+| `/groups/:groupId` | 小组详情 | 跳转登录 | 可访问 | 可访问 |
+| `/settings` | 个人设置 | 跳转登录 | 可访问 | 可访问 |
+| `/notifications` | 通知列表 | 跳转登录 | 可访问 | 可访问 |
+| `/admin/*` | 管理后台 | 跳转登录 | 跳转首页 | 可访问 |
 
 ---
 
-## API 概览
+## API 接口一览
 
-基础路径：`/api/v1`
+所有 API 基础路径为 `/api/v1`，采用 Session 认证。请求和响应格式统一为：
 
-| 模块 | 端点 | 说明 |
+```json
+{
+    "code": 0,
+    "message": "success",
+    "data": { ... }
+}
+```
+
+### 认证模块
+
+| 方法 | 端点 | 说明 |
 |------|------|------|
-| 认证 | `POST /auth/register/` | 注册 |
-| 认证 | `POST /auth/login/` | 登录 |
-| 认证 | `GET/PATCH /auth/me/` | 获取 / 更新个人信息 |
-| 认证 | `POST /auth/avatar/` | 上传头像 |
-| 认证 | `POST /auth/cover/` | 上传封面 |
-| 主页 | `GET /profiles/:id/` | 获取用户主页信息 |
-| 主页 | `GET /profiles/:id/posts/` | 获取用户动态列表 |
-| 主页 | `GET /profiles/:id/visitors/` | 获取访客足迹 |
-| 主页 | `GET/POST /profiles/:id/guestbook/` | 留言板 |
-| 好友 | `GET /friends/` | 好友列表 |
-| 好友 | `POST /friends/request/` | 发送好友申请 |
-| 好友 | `POST /friends/handle/` | 处理好友申请 |
-| 动态 | `GET /posts/` | 广场动态流 |
-| 动态 | `POST /posts/create/` | 发布动态 |
-| 动态 | `POST /posts/:id/like/` | 点赞 / 取消 |
-| 动态 | `GET/POST /posts/:id/comments/` | 评论列表 / 发表评论 |
-| 聊天 | `GET /chat/rooms/` | 聊天列表 |
-| 聊天 | `GET /chat/rooms/:id/messages/` | 消息历史 |
-| 小组 | `GET/POST /groups/` | 小组列表 / 创建 |
-| 小组 | `POST /groups/:id/join/` | 加入小组 |
-| 插件 | `POST /plugins/quiz/questions/` | 默契问答出题 |
-| 插件 | `GET /plugins/quiz/questions/received/` | 收到的题目 |
-| 插件 | `POST /plugins/question-box/` | 匿名提问 |
-| 插件 | `GET /plugins/question-box/inbox/` | 收到的提问 |
-| 通知 | `GET /notifications/` | 通知列表 |
-| 管理 | `GET/PATCH /admin/users/` | 用户管理 |
-| 管理 | `GET/PATCH /admin/settings/` | 站点设置 |
+| POST | `/auth/register/` | 用户注册（用户名、密码、昵称、邮箱选填） |
+| POST | `/auth/login/` | 用户登录 |
+| POST | `/auth/logout/` | 退出登录 |
+| GET | `/auth/me/` | 获取当前用户信息 |
+| PATCH | `/auth/me/` | 更新个人信息（昵称、签名、邮箱等） |
+| POST | `/auth/change-password/` | 修改密码（需旧密码验证） |
+| POST | `/auth/avatar/` | 上传头像（multipart/form-data） |
+| POST | `/auth/cover/` | 上传封面（multipart/form-data） |
+| GET | `/auth/csrf/` | 获取 CSRF Token |
 
-详细 API 文档见 `Docs/03-API与WebSocket接口文档.md`。
+### 个人主页模块
+
+| 方法 | 端点 | 说明 |
+|------|------|------|
+| GET | `/profiles/{username_or_id}/` | 获取用户主页信息 |
+| GET/PATCH | `/profiles/{username_or_id}/admin/` | 管理员查看/编辑用户主页 |
+| GET | `/profiles/{id}/posts/` | 获取用户的动态列表 |
+| GET | `/profiles/{id}/visitors/` | 获取访客足迹 |
+| GET | `/profiles/{id}/guestbook/` | 获取留言列表 |
+| POST | `/profiles/{id}/guestbook/create/` | 发表留言 |
+| POST | `/profiles/guestbook/{id}/reply/` | 回复留言（主人） |
+| DELETE | `/profiles/guestbook/{id}/delete/` | 删除留言（主人） |
+
+### 好友模块
+
+| 方法 | 端点 | 说明 |
+|------|------|------|
+| GET | `/friends/` | 获取好友列表 |
+| POST | `/friends/request/` | 发送好友申请 |
+| GET | `/friends/requests/` | 获取收到的申请列表 |
+| POST | `/friends/handle/` | 处理好友申请（同意/拒绝） |
+| POST | `/friends/unfriend/` | 解除好友关系 |
+| GET | `/friends/search/` | 搜索用户 |
+
+### 动态模块
+
+| 方法 | 端点 | 说明 |
+|------|------|------|
+| GET | `/posts/` | 获取广场动态列表 |
+| POST | `/posts/create/` | 发布动态（multipart/form-data） |
+| GET | `/posts/{id}/` | 获取单个动态详情 |
+| DELETE | `/posts/{id}/delete/` | 删除自己的动态 |
+| POST | `/posts/{id}/like/` | 点赞/取消点赞 |
+| GET | `/posts/{id}/comments/` | 获取评论列表 |
+| POST | `/posts/{id}/comments/create/` | 发表评论 |
+| DELETE | `/posts/comments/{id}/delete/` | 删除自己的评论 |
+
+### 聊天模块
+
+| 方法 | 端点 | 说明 |
+|------|------|------|
+| GET | `/chat/rooms/` | 获取聊天列表 |
+| POST | `/chat/rooms/create/` | 创建私聊/群聊房间 |
+| GET | `/chat/rooms/{id}/messages/` | 获取消息历史 |
+| POST | `/chat/rooms/{id}/messages/send/` | 发送消息（REST 后备） |
+| WS | `/ws/chat/` | WebSocket 实时聊天 |
+
+### 小组模块
+
+| 方法 | 端点 | 说明 |
+|------|------|------|
+| GET | `/groups/` | 获取小组列表 |
+| POST | `/groups/create/` | 创建小组 |
+| GET | `/groups/{id}/` | 获取小组详情 |
+| PATCH | `/groups/{id}/update/` | 更新小组信息（组长） |
+| POST | `/groups/{id}/join/` | 加入小组 |
+| POST | `/groups/{id}/leave/` | 退出小组 |
+| POST | `/groups/{id}/members/{uid}/` | 管理成员（组长） |
+| GET | `/groups/{id}/posts/` | 获取小组动态 |
+
+### 插件模块
+
+| 方法 | 端点 | 说明 |
+|------|------|------|
+| POST | `/plugins/quiz/questions/` | 给好友出题 |
+| GET | `/plugins/quiz/questions/received/` | 我收到的题目 |
+| POST | `/plugins/quiz/questions/{id}/answer/` | 答题 |
+| GET | `/plugins/quiz/result/{friend_id}/` | 获取与好友的匹配度 |
+| DELETE | `/plugins/quiz/questions/{id}/` | 删除题目 |
+| POST | `/plugins/question-box/` | 匿名提问 |
+| GET | `/plugins/question-box/inbox/` | 我收到的提问 |
+| POST | `/plugins/question-box/{id}/answer/` | 回答提问 |
+| DELETE | `/plugins/question-box/{id}/delete/` | 删除提问 |
+
+### 通知模块
+
+| 方法 | 端点 | 说明 |
+|------|------|------|
+| GET | `/notifications/` | 获取通知列表 |
+| POST | `/notifications/{id}/read/` | 标记单条已读 |
+| POST | `/notifications/read-all/` | 全部标记已读 |
+| GET | `/notifications/unread-count/` | 获取未读数 |
+
+### 管理后台模块
+
+| 方法 | 端点 | 说明 |
+|------|------|------|
+| GET | `/admin/users/` | 用户列表 |
+| PATCH | `/admin/users/{id}/` | 修改用户状态 |
+| GET | `/admin/posts/` | 动态列表 |
+| DELETE | `/admin/posts/{id}/` | 删除动态 |
+| GET | `/admin/comments/` | 评论列表 |
+| DELETE | `/admin/comments/{id}/` | 删除评论 |
+| GET | `/admin/anonymous-questions/` | 匿名提问追溯 |
+| GET/PATCH | `/admin/settings/` | 站点设置 |
+| GET | `/admin/plugins/` | 插件列表 |
+| PATCH | `/admin/plugins/{id}/` | 启停插件 |
+| GET | `/admin/stats/` | 数据统计概览 |
+| GET | `/admin/trends/` | 趋势数据 |
+| GET | `/admin/logs/` | 操作日志 |
+| GET | `/admin/logs/actions/` | 日志操作类型 |
+| GET | `/admin/plugins/configs/` | 插件管理配置 |
 
 ---
 
-## 主题色板
+## 主题设计
 
-秋叶主题色通过 Tailwind CSS 扩展色板实现：
+枫落港的界面采用秋叶主题色，通过 Tailwind CSS 扩展色板实现。核心色彩如下：
 
 | 色值 | CSS 类 | 用途 |
 |------|--------|------|
-| `#C73B1D` | `maple-600` | 导航栏、按钮、重要元素 |
-| `#F5A623` | `maple-400` | 强调、悬停、标签 |
-| `#FFF8F0` | `maple-50` | 页面主背景 |
-| `#FFFFFF` | `white` | 卡片、内容区域 |
-| `#2D2D2D` | `text-primary` | 正文 |
-| `#8C8C8C` | `text-secondary` | 辅助文字 |
-| `#E8DDD4` | `border` | 分割线、边框 |
+| `#C73B1D` | `maple-600` | 导航栏背景、主要按钮、关键强调元素 |
+| `#F5A623` | `maple-400` | 悬停状态、标签、次要强调 |
+| `#FFF8F0` | `maple-50` | 页面主背景色 |
+| `#FFFFFF` | `white` | 卡片背景、内容容器 |
+| `#2D2D2D` | `text-primary` | 正文文字 |
+| `#8C8C8C` | `text-secondary` | 辅助文字、占位符 |
+| `#E8DDD4` | `border` | 边框、分割线 |
 
-配置见 `frontend/tailwind.config.js`。
+Tailwind 配置见 `frontend/tailwind.config.js`，其中还定义了自定义阴影（card、float、modal）、字体（Noto Sans SC）和动画效果（fade-in、slide-up、scale-in 等）。
 
 ---
 
-## 设计文档
+## 可用命令
 
-项目文档位于 `Docs/` 目录下：
+### 后端 (backend/)
+
+| 命令 | 说明 |
+|------|------|
+| `python manage.py runserver` | 启动开发服务器（默认 8000 端口） |
+| `python manage.py migrate` | 执行数据库迁移 |
+| `python manage.py makemigrations` | 生成迁移文件 |
+| `python manage.py createsuperuser` | 创建管理员账号 |
+| `python manage.py shell` | 进入 Django Shell |
+
+### 前端 (frontend/)
+
+| 命令 | 说明 |
+|------|------|
+| `npm run dev` | 启动开发服务器（热更新，默认 5173 端口） |
+| `npm run build` | 构建生产版本 |
+| `npm run preview` | 预览生产构建结果 |
+
+---
+
+## 文档索引
+
+项目完整文档位于 `Docs/` 目录下：
 
 | 文件 | 内容 |
 |------|------|
-| `01-PRD-需求规格说明书.md` | 产品需求定义、用户故事、功能优先级矩阵 |
-| `02-技术架构与数据库设计.md` | 架构图、技术选型、全部 27 张表结构定义 |
-| `03-API与WebSocket接口文档.md` | 全部 REST API 端点与 WebSocket 消息协议 |
-| `04-前端设计规范.md` | 主题色规范、路由表、组件树、Pinia Store 设计 |
-| `05-插件系统设计.md` | 后端插件基类 + 注册器、前端 PluginRegistry |
-| `06-开发任务书与验收标准.md` | 分阶段开发任务分配与验收清单 |
-| `07-访客公开浏览功能设计方案.md` | 未登录访客页面级 / API 级权限矩阵 |
-| `08-管理后台插件扩展系统设计.md` | 管理后台插件自声明与自动发现机制 |
+| `01-PRD-需求规格说明书.md` | 完整的产品需求定义，包含功能详情、用户故事和优先级矩阵 |
+| `02-技术架构与数据库设计.md` | 系统架构图、技术选型理由、全部 27 张数据库表结构 |
+| `03-API与WebSocket接口文档.md` | 全部 REST API 端点的请求/响应格式，WebSocket 消息协议 |
+| `04-前端设计规范.md` | 主题色板、字体规范、路由表、组件树、Pinia Store 设计 |
+| `05-插件系统设计.md` | 后端插件基类与注册器、前端 PluginRegistry、数据契约 |
+| `06-开发任务书与验收标准.md` | 分 7 个 Milestone 的开发任务分配与验收 checklist |
+| `07-访客公开浏览功能设计方案.md` | 未登录访客的访问权限矩阵及交互行为定义 |
+| `08-管理后台插件扩展系统设计.md` | 管理后台侧边栏与路由的自动发现机制 |
 
-开发规划见 `Plans/` 目录。
+开发规划文档位于 `Plans/` 目录下：
 
----
-
-## 可用脚本
-
-### 后端
-
-```bash
-python manage.py migrate              # 执行数据库迁移
-python manage.py makemigrations       # 生成迁移文件
-python manage.py createsuperuser      # 创建管理员账号
-python manage.py runserver            # 启动开发服务器
-```
-
-### 前端
-
-```bash
-npm run dev          # 开发模式（热更新）
-npm run build        # 生产构建
-npm run preview      # 预览构建结果
-```
+| 文件 | 内容 |
+|------|------|
+| `01-迭代路线图.md` | 7 个 Milestone 的时间线与依赖关系 |
+| `02-环境搭建指南.md` | 本地开发环境搭建的详细步骤 |
+| `03-开发协作规范.md` | 分支策略、代码审查流程、提交规范 |
+| `04-实现进度跟踪.md` | 各模块的实现进度记录 |
+| `05-文档一致性审查与修正.md` | 文档与实际代码的偏差记录 |
 
 ---
 
 ## 开发约定
 
-- 分支策略：`UIUX`（基于 `master`），所有功能开发在 `UIUX` 上进行
-- 后端：Django 5 + DRF，使用 Session 认证，统一响应格式 `{code, message, data}`
-- 前端：Vue 3 Composition API + Tailwind CSS，使用 `@/` 路径别名
-- 组件设计：全局组件位于 `src/components/`，设计系统类使用 `card-base`、`btn-primary` 等预定义样式
-- 确认弹窗：统一使用 `useConfirm()` composable + `<ConfirmDialog />`
-- ToggleSwitch：使用 `<ToggleSwitch v-model="..." />` 组件
+- **分支策略**：当前开发在 `UIUX` 分支上进行（基于 `master`）
+- **后端架构**：Django 5 + DRF，Session 认证，统一响应格式 `{code, message, data}`
+- **前端架构**：Vue 3 Composition API + Tailwind CSS，使用 `@/` 路径别名指向 `src/`
+- **组件规范**：公共组件统一放在 `src/components/`，使用 `card-base`、`btn-primary`、`btn-secondary`、`btn-ghost`、`input-base`、`skeleton`、`page-title` 等设计系统类
+- **确认弹窗**：统一使用 `useConfirm()` composable 配合全局 `<ConfirmDialog />` 组件
+- **开关组件**：统一使用 `<ToggleSwitch v-model="..." />`
 
-详细规范见 `AGENTS.md` 与 `Docs/04-前端设计规范.md`。
+详细规范请查看 `AGENTS.md` 与 `Docs/04-前端设计规范.md`。
 
 ---
 
 ## 许可证
 
-[MIT](./LICENSE) (c) 2026 RL-RedLeaf
+[MIT](./LICENSE)
+
+Copyright (c) 2026 RL-RedLeaf
+
+---
+
+> 项目代码中以 `FallingMapleHaven` 作为英文项目名，`枫落港` 为其中文名称。
