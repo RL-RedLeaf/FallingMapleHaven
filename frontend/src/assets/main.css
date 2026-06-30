@@ -48,7 +48,7 @@
   .card-base:hover {
     @apply shadow-float;
   }
-  .card-base:active {
+  .card-base:active:not(:has(.post-actions:active)) {
     @apply scale-[0.97] shadow-sm;
   }
 

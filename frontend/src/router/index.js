@@ -105,7 +105,7 @@ router.beforeEach(async (to) => {
   }
 
   if (to.meta.requiresAuth && !authStore.isAuthenticated) {
-    return { name: 'Login' }
+    return { name: 'Login', query: { next: to.fullPath } }
   }
   if (to.meta.guest && authStore.isAuthenticated) {
     return { name: 'Home' }

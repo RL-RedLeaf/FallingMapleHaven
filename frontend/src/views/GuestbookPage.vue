@@ -1,15 +1,25 @@
 <script setup>
 import { computed, ref, onMounted } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
+import { useAuthStore } from '@/stores/auth'
 import { profileApi } from '@/api/profiles'
+import { useConfirm } from '@/composables/useConfirm'
 import { relativeTime } from '@/utils/time'
 import AvatarImage from '@/components/AvatarImage.vue'
 
 const route = useRoute()
+const router = useRouter()
+const authStore = useAuthStore()
+const { confirm: confirmDelete } = useConfirm()
+
 const entries = ref([])
 const loading = ref(true)
 const newContent = ref('')
+const submitting = ref(false)
+const replyTexts = ref({})
 const targetUserId = computed(() => route.params.userId)
+const isOwner = computed(() => authStore.user?.user_id === Number(targetUserId.value))
+const isGuest = computed(() => !authStore.isAuthenticated)
 
 onMounted(async () => {
   if (!targetUserId.value) return
@@ -23,19 +33,49 @@ onMounted(async () => {
 
 async function submitEntry() {
   if (!newContent.value.trim() || !targetUserId.value) return
+  submitting.value = true
   try {
     const res = await profileApi.createGuestbook(targetUserId.value, newContent.value.trim())
     entries.value.unshift(res.data)
     newContent.value = ''
+  } catch { /* ignore */ } finally {
+    submitting.value = false
+  }
+}
+
+async function replyEntry(entryId) {
+  const text = replyTexts.value[entryId]
+  if (!text?.trim()) return
+  try {
+    const res = await profileApi.replyGuestbook(entryId, text.trim())
+    entries.value = entries.value.map(e =>
+      e.id === entryId ? { ...e, reply: res.data?.reply || text.trim() } : e
+    )
+    replyTexts.value[entryId] = ''
+  } catch { /* ignore */ }
+}
+
+async function deleteEntry(entryId) {
+  if (!await confirmDelete({ title: '删除留言', message: '确认删除这条留言？', variant: 'danger', confirmText: '删除' })) return
+  try {
+    await profileApi.deleteGuestbook(entryId)
+    entries.value = entries.value.filter(e => e.id !== entryId)
   } catch { /* ignore */ }
 }
 </script>
 
 <template>
   <div class="max-w-4xl mx-auto px-4 py-8">
-    <h1 class="text-3xl font-bold text-maple-700 mb-6">留言板</h1>
+    <h1 class="page-title mb-6">留言板</h1>
 
-    <div class="bg-white rounded-2xl shadow-sm border border-border p-4 mb-6">
+    <div v-if="isGuest" class="bg-white rounded-2xl shadow-sm border border-border p-6 mb-6 text-center">
+      <p class="text-text-secondary mb-4">登录后即可留言</p>
+      <RouterLink :to="`/login?next=/profile/${targetUserId}/guestbook`" class="btn-primary inline-block px-6 py-2">
+        登录
+      </RouterLink>
+    </div>
+
+    <div v-else-if="!isOwner" class="bg-white rounded-2xl shadow-sm border border-border p-4 mb-6">
       <textarea
         v-model="newContent"
         rows="3"
@@ -45,33 +85,59 @@ async function submitEntry() {
       <div class="flex justify-end mt-2">
         <button
           @click="submitEntry"
-          :disabled="!newContent.trim()"
-          class="px-5 py-1.5 bg-maple-600 text-white text-sm rounded-lg hover:bg-maple-700 transition-colors disabled:opacity-50 cursor-pointer"
+          :disabled="submitting || !newContent.trim()"
+          class="btn-primary px-5 py-1.5"
         >
-          发布
+          {{ submitting ? '发布中...' : '发布' }}
         </button>
       </div>
     </div>
 
     <div v-if="loading" class="text-center text-text-secondary py-12">加载中...</div>
 
-    <div v-else-if="!entries.length" class="text-center text-text-secondary py-12">
-      暂无留言
+    <div v-else-if="!entries.length" class="text-center py-16 text-text-secondary">
+      <p>暂无留言</p>
     </div>
 
     <div v-else class="space-y-3">
       <div
         v-for="entry in entries"
         :key="entry.id"
-        class="bg-white rounded-2xl shadow-sm border border-border p-4 flex items-start gap-3"
+        class="bg-white rounded-2xl shadow-sm border border-border p-4"
       >
-        <AvatarImage :user="entry.user" size="sm" />
-        <div class="flex-1 min-w-0">
-          <div class="flex items-center gap-2">
-            <span class="text-sm font-medium text-text-primary">{{ entry.user?.nickname }}</span>
-            <span class="text-xs text-text-secondary">{{ relativeTime(entry.created_at) }}</span>
+        <div class="flex items-start gap-3">
+          <AvatarImage :user="entry.user" size="sm" />
+          <div class="flex-1 min-w-0">
+            <div class="flex items-center gap-2">
+              <span class="text-sm font-medium text-text-primary">{{ entry.user?.nickname }}</span>
+              <span class="text-xs text-text-secondary">{{ relativeTime(entry.created_at) }}</span>
+            </div>
+            <p class="text-sm text-text-primary mt-1 whitespace-pre-wrap break-words">{{ entry.content }}</p>
+
+            <div v-if="entry.reply" class="mt-2 pl-3 border-l-2 border-maple-400">
+              <span class="text-tag font-medium text-maple-600">主人回复: </span>
+              <span class="text-sm text-text-primary">{{ entry.reply }}</span>
+            </div>
+
+            <div v-if="isOwner && !entry.reply" class="mt-2 flex gap-2">
+              <input
+                v-model="replyTexts[entry.id]"
+                type="text"
+                placeholder="回复..."
+                class="input-base !w-48 !py-1.5 !text-sm"
+                @keyup.enter="replyEntry(entry.id)"
+              />
+              <button @click="replyEntry(entry.id)" class="btn-ghost px-3 py-1 text-xs">回复</button>
+            </div>
+
+            <button
+              v-if="isOwner"
+              @click="deleteEntry(entry.id)"
+              class="mt-1 text-xs text-red-400 hover:text-red-500 transition-colors cursor-pointer"
+            >
+              删除
+            </button>
           </div>
-          <p class="text-sm text-text-primary mt-1">{{ entry.content }}</p>
         </div>
       </div>
     </div>

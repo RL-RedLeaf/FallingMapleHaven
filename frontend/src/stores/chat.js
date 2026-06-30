@@ -18,9 +18,15 @@ export const useChatStore = defineStore('chat', {
       const res = await chatApi.rooms()
       this.rooms = res.data || []
     },
-    async fetchMessages(roomId) {
-      const res = await chatApi.messages(roomId)
-      this.messages[roomId] = res.data?.results || []
+    async fetchMessages(roomId, page = 1) {
+      const res = await chatApi.messages(roomId, { page, page_size: 50 })
+      if (page === 1) {
+        this.messages[roomId] = res.data?.results || []
+      } else {
+        const existing = this.messages[roomId] || []
+        this.messages[roomId] = [...(res.data?.results || []), ...existing]
+      }
+      return res.data
     },
     async sendMessage(roomId, content) {
       const res = await chatApi.sendMessage(roomId, content)
@@ -37,6 +43,11 @@ export const useChatStore = defineStore('chat', {
       if (!room) return
       room.last_message = message.content
       room.last_message_at = message.created_at
+      this.rooms.sort((a, b) => {
+        if (!a.last_message_at) return 1
+        if (!b.last_message_at) return -1
+        return new Date(b.last_message_at) - new Date(a.last_message_at)
+      })
     },
     connectWs() {
       if (this.ws && [WebSocket.OPEN, WebSocket.CONNECTING].includes(this.ws.readyState)) return

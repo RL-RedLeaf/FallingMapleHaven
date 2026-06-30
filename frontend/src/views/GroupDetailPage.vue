@@ -21,6 +21,9 @@ const loading = ref(true)
 const joining = ref(false)
 const newPostContent = ref('')
 const submittingPost = ref(false)
+const postPage = ref(1)
+const hasMorePosts = ref(true)
+const loadingPosts = ref(false)
 
 const isMember = computed(() => {
   if (!group.value?.members) return false
@@ -38,6 +41,9 @@ onMounted(() => {
 })
 
 watch(() => route.params.groupId, () => {
+  postPage.value = 1
+  hasMorePosts.value = true
+  posts.value = []
   fetchGroup()
 })
 
@@ -48,18 +54,34 @@ async function fetchGroup() {
     group.value = res.data
     members.value = res.data?.members || []
     if (isMember.value) {
-      await fetchPosts()
+      await fetchPosts(true)
     }
   } catch { /* ignore */ } finally {
     loading.value = false
   }
 }
 
-async function fetchPosts() {
+async function fetchPosts(reset = false) {
+  if (loadingPosts.value) return
+  loadingPosts.value = true
   try {
-    const res = await groupApi.posts(groupId.value)
-    posts.value = res.data?.results || res.data || []
-  } catch { /* ignore */ }
+    if (reset) postPage.value = 1
+    const res = await groupApi.posts(groupId.value, { page: postPage.value, page_size: 20 })
+    const results = res.data?.results || res.data || []
+    if (reset) {
+      posts.value = results
+    } else {
+      posts.value.push(...results)
+    }
+    if (res.data) {
+      hasMorePosts.value = res.data.page * res.data.page_size < res.data.total
+    } else {
+      hasMorePosts.value = false
+    }
+    if (!reset) postPage.value += 1
+  } catch { /* ignore */ } finally {
+    loadingPosts.value = false
+  }
 }
 
 async function handleJoin() {
@@ -97,7 +119,7 @@ async function submitGroupPost() {
     formData.append('group_id', groupId.value)
     await postApi.create(formData)
     newPostContent.value = ''
-    await fetchPosts()
+    await fetchPosts(true)
     toast.success('已发布到小组')
   } catch { /* ignore */ } finally {
     submittingPost.value = false
@@ -119,7 +141,7 @@ async function submitGroupPost() {
         <p v-if="group.description" class="text-sm text-text-secondary mt-1">{{ group.description }}</p>
         <div class="flex items-center gap-4 mt-3 text-xs text-text-secondary">
           <span>创建者: {{ group.owner?.nickname }}</span>
-          <span>👥 {{ group.member_count || members.length }} 名成员</span>
+          <span>{{ group.member_count || members.length }} 名成员</span>
           <span v-if="!group.is_public" class="px-1.5 py-0.5 bg-gray-100 rounded">私密</span>
         </div>
         <button
@@ -163,10 +185,19 @@ async function submitGroupPost() {
               </button>
             </div>
           </div>
+
           <div v-if="!posts.length" class="text-center text-text-secondary py-8">
             暂无动态
           </div>
           <PostCard v-for="post in posts" :key="post.id" :post="post" :showActions="true" />
+          <button
+            v-if="hasMorePosts"
+            @click="fetchPosts(false)"
+            :disabled="loadingPosts"
+            class="w-full text-center text-sm text-maple-600 hover:text-maple-700 py-3 transition-colors cursor-pointer"
+          >
+            {{ loadingPosts ? '加载中...' : '加载更多动态' }}
+          </button>
         </template>
       </div>
 

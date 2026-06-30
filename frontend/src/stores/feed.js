@@ -42,5 +42,11 @@ export const useFeedStore = defineStore('feed', {
       await postApi.delete(postId)
       this.posts = this.posts.filter(p => p.id !== postId)
     },
+    reset() {
+      this.posts = []
+      this.currentPage = 1
+      this.hasMore = true
+      this.loading = false
+    },
   },
 })

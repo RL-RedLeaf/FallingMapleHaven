@@ -15,6 +15,9 @@ const roomId = computed(() => Number(route.params.roomId))
 const messageInput = ref('')
 const sending = ref(false)
 const loading = ref(true)
+const loadingMore = ref(false)
+const messagePage = ref(1)
+const hasMoreMessages = ref(true)
 const messageListRef = ref(null)
 
 const currentRoom = computed(() => {
@@ -34,6 +37,7 @@ onMounted(async () => {
     chatStore.fetchRooms(),
     chatStore.fetchMessages(roomId.value),
   ])
+  messagePage.value = 1
   loading.value = false
   scrollToBottom()
 })
@@ -48,6 +52,23 @@ function scrollToBottom() {
       messageListRef.value.scrollTop = messageListRef.value.scrollHeight
     }
   })
+}
+
+async function loadMore() {
+  if (loadingMore.value || !hasMoreMessages.value) return
+  loadingMore.value = true
+  const prevHeight = messageListRef.value?.scrollHeight || 0
+  try {
+    const data = await chatStore.fetchMessages(roomId.value, messagePage.value + 1)
+    messagePage.value += 1
+    hasMoreMessages.value = data.page * data.page_size < data.total
+    await nextTick()
+    if (messageListRef.value) {
+      messageListRef.value.scrollTop = messageListRef.value.scrollHeight - prevHeight
+    }
+  } catch { /* ignore */ } finally {
+    loadingMore.value = false
+  }
 }
 
 async function sendMessage() {
@@ -87,6 +108,15 @@ function goBack() {
       ref="messageListRef"
       class="flex-1 overflow-y-auto px-4 py-4 space-y-3 scrollbar-hide"
     >
+      <div v-if="loadingMore" class="text-center text-text-secondary py-2 text-xs">加载中...</div>
+      <button
+        v-if="hasMoreMessages && !loadingMore"
+        @click="loadMore"
+        class="w-full text-center text-xs text-maple-600 hover:text-maple-700 py-2 transition-colors cursor-pointer"
+      >
+        加载更多消息
+      </button>
+
       <div v-if="loading" class="text-center text-text-secondary py-8">加载中...</div>
       <div v-else-if="!messages.length" class="text-center text-text-secondary py-8">
         暂无消息，发送第一条消息吧

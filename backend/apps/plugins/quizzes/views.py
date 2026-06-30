@@ -153,6 +153,25 @@ class QuizAnswerView(APIView):
         )
 
 
+class QuizQuestionDeleteView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def delete(self, request, pk):
+        inactive = ensure_plugin_active("quiz")
+        if inactive:
+            return inactive
+
+        try:
+            question = QuizQuestion.objects.get(pk=pk, creator=request.user)
+        except QuizQuestion.DoesNotExist:
+            return Response(
+                {"code": 40004, "message": "题目不存在或无权限"},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+        question.delete()
+        return Response({"code": 0, "message": "success", "data": None})
+
+
 class QuizResultView(APIView):
     permission_classes = [IsAuthenticated]
 

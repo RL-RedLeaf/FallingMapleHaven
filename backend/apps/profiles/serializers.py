@@ -39,7 +39,9 @@ class ProfileSerializer(serializers.ModelSerializer):
         return obj.user.bio
 
     def get_real_name(self, obj):
-        return obj.user.real_name
+        if obj.show_real_name:
+            return obj.user.real_name
+        return None
 
     def get_date_joined(self, obj):
         return obj.user.date_joined
